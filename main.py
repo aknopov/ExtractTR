@@ -1,11 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog
+import extractor as ex
+from extractor import extract
 
 source_file = ""
 destination_file = ""
 widget_width = 30
-
-# Google: "python create GUI with file open dialog"
 
 def start_app_window():
     global root
@@ -16,9 +16,10 @@ def start_app_window():
     root = tk.Tk()
     root.title("Soil Test Data Extractor")
     root.geometry("500x200")
+    root.resizable(False, False)
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
-    frame = tk.Frame(root)    
+    frame = tk.Frame(root)
     source_button = tk.Button(
         frame, text="Source File", width=widget_width, command=select_source_file
     )
@@ -36,10 +37,10 @@ def start_app_window():
         command=extract,
     )
     source_label = tk.Label(
-        frame, borderwidth=1, width=widget_width, relief="groove"#, anchor="e"
+        frame, borderwidth=1, width=widget_width, relief="groove"  # , anchor="e"
     )
     destination_label = tk.Label(
-        frame, borderwidth=1, width=widget_width, relief="groove"#, anchor="e"
+        frame, borderwidth=1, width=widget_width, relief="groove"  # , anchor="e"
     )
 
     frame.pack(padx=10, pady=10)
@@ -61,20 +62,29 @@ def select_source_file():
     global source_file
     global source_label
     source_file = open_file_dialog()
-    source_label.configure(text = source_file)
+    source_label.configure(text=source_file)
     source_label.update()
     enable_extract()
+
 
 def select_destination_file():
     global destination_file
     global destination_label
     destination_file = open_file_dialog()
-    destination_label.configure(text = destination_file)
+    destination_label.configure(text=destination_file)
     destination_label.update()
     enable_extract()
 
+
 def extract():
-    print("Starting extraction...")
+    global source_file
+    disable_extract()
+
+    ex.extract(source_file, destination_file)
+
+    source_file = ""
+    source_label.configure(text=source_file)
+    source_label.update()
 
 def open_file_dialog():
     return filedialog.askopenfilename(
@@ -86,6 +96,7 @@ def open_file_dialog():
         ],
     )
 
+
 def enable_extract():
     global source_file
     global destination_file
@@ -94,4 +105,9 @@ def enable_extract():
         extract_button.config(state="normal")
         extract_button.update()
 
+def disable_extract():
+    global extract_button
+    extract_button.config(state="disabled")
+    extract_button.update()
+    
 start_app_window()

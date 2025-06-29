@@ -1,6 +1,6 @@
 import math
 import unittest
-from extractor import extract, is_number, is_range, mid_range, get_value
+from extractor import is_number, is_range, convert_range, convert_value, convert_column
 from openpyxl import Workbook
 import os
 
@@ -46,21 +46,30 @@ class TestExtractor(unittest.TestCase):
         self.assertFalse(is_range("123"))
         self.assertFalse(is_range("abc - def"))
 
-    def test_mid_range(self):
-        self.assertEqual(mid_range("10 - 20"), 15.0)
-        self.assertEqual(mid_range("-10 - 10"), 0.0)
-        self.assertEqual(mid_range("5.5-7.5"), 6.5)
-        self.assertEqual(mid_range("-10-10"), 0.0)
-        self.assertEqual(mid_range("8 - -6"), 1.0)
-        self.assertEqual(mid_range("-8 - -6"), -7.0)
-        self.assertTrue(math.isnan(mid_range("abc - def")))
-        self.assertTrue(math.isnan(mid_range("boo")))
+    def test_convert_value(self):
+        self.assertEqual(convert_value("123"), 123.0)
+        self.assertEqual(convert_value("10 - 20"), 15.0)
+        self.assertTrue(math.isnan(convert_value("abc")))
 
-    def test_get_value(self):
-        self.assertEqual(get_value("123"), 123.0)
-        self.assertEqual(get_value("10 - 20"), 15.0)
-        self.assertTrue(math.isnan(get_value("abc")))
+    def test_convert_range(self):
+        self.assertEqual(convert_range("10 - 20"), 15.0)
+        self.assertEqual(convert_range("-10 - 10"), 0.0)
+        self.assertEqual(convert_range("5.5-7.5"), 6.5)
+        self.assertEqual(convert_range("-10-10"), 0.0)
+        self.assertEqual(convert_range("8 - -6"), 1.0)
+        self.assertEqual(convert_range("-8 - -6"), -7.0)
+        self.assertTrue(math.isnan(convert_range("abc - def")))
+        self.assertTrue(math.isnan(convert_range("boo")))
 
+    def test_convert_column(self):
+        self.assertEqual(convert_column("A"), 1)
+        self.assertEqual(convert_column("B"), 2)
+        self.assertEqual(convert_column("Z"), 26)
+        self.assertEqual(convert_column("AA"), 27)
+        self.assertEqual(convert_column("AB"), 28)
+        self.assertEqual(convert_column("AZ"), 52)
+        self.assertEqual(convert_column("BA"), 53)
+        self.assertEqual(convert_column("CG"), 85)
 
 if __name__ == "__main__":
     unittest.main()

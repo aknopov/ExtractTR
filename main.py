@@ -5,7 +5,7 @@ from extractor import extract
 
 source_file = ""
 destination_file = ""
-widget_width = 30
+label_width = 70
 
 def start_app_window():
     global root
@@ -21,34 +21,40 @@ def start_app_window():
 
     frame = tk.Frame(root)
     source_button = tk.Button(
-        frame, text="Source File", width=widget_width, command=select_source_file
+        frame,
+        text="Source File", 
+        width=10, 
+        command=select_source_file
     )
     destination_button = tk.Button(
         frame,
         text="Destination File",
-        width=widget_width,
+        width=15,
         command=select_destination_file,
     )
     extract_button = tk.Button(
         root,
         text="Extract",
         state="disabled",
-        padx=20,
         command=extract,
     )
     source_label = tk.Label(
-        frame, borderwidth=1, width=widget_width, relief="groove"  # , anchor="e"
+        frame, borderwidth=1, width=label_width, relief="groove", anchor="w"
     )
     destination_label = tk.Label(
-        frame, borderwidth=1, width=widget_width, relief="groove"  # , anchor="e"
+        frame, borderwidth=1, width=label_width, relief="groove", anchor="w"
     )
 
-    frame.pack(padx=10, pady=10)
-    source_button.grid(row=0, column=0, padx=10, pady=10)
-    destination_button.grid(row=0, column=1, padx=10, pady=10)
-    source_label.grid(row=1, column=0, padx=10, pady=10)
-    destination_label.grid(row=1, column=1, padx=10, pady=10)
-    extract_button.pack(padx=10, pady=10)
+    root.columnconfigure(0, weight=1) 
+    frame.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+    
+    frame.columnconfigure(0, weight=1) 
+    source_button.grid(row=0, column=0, sticky="w")
+    source_label.grid(row=1, column=0, sticky="w", pady=7)
+    destination_button.grid(row=2, column=0, sticky="w", pady=10)
+    destination_label.grid(row=3, column=0, sticky="w")
+
+    extract_button.grid(row=1, column=0, padx=30, pady=15)
 
     root.mainloop()
 
@@ -109,5 +115,5 @@ def disable_extract():
     global extract_button
     extract_button.config(state="disabled")
     extract_button.update()
-    
+
 start_app_window()

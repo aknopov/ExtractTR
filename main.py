@@ -2,16 +2,22 @@ import tkinter as tk
 from tkinter import filedialog
 import extractor as ex
 from extractor import extract
+import logging as log
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 source_file = ""
 destination_file = ""
 label_width = 70
+
 
 def start_app_window():
     global root
     global source_label
     global destination_label
     global extract_button
+
+    configure_logging()
 
     root = tk.Tk()
     root.title("Soil Test Data Extractor")
@@ -22,8 +28,8 @@ def start_app_window():
     frame = tk.Frame(root)
     source_button = tk.Button(
         frame,
-        text="Source File", 
-        width=10, 
+        text="Source File",
+        width=10,
         command=select_source_file
     )
     destination_button = tk.Button(
@@ -45,10 +51,10 @@ def start_app_window():
         frame, borderwidth=1, width=label_width, relief="groove", anchor="w"
     )
 
-    root.columnconfigure(0, weight=1) 
+    root.columnconfigure(0, weight=1)
     frame.grid(row=0, column=0, padx=10, pady=10, sticky="w")
-    
-    frame.columnconfigure(0, weight=1) 
+
+    frame.columnconfigure(0, weight=1)
     source_button.grid(row=0, column=0, sticky="w")
     source_label.grid(row=1, column=0, sticky="w", pady=7)
     destination_button.grid(row=2, column=0, sticky="w", pady=10)
@@ -60,7 +66,7 @@ def start_app_window():
 
 
 def on_closing():
-    # UC do not close before completing
+    # UC cleanup and do not close before completing
     root.destroy()  # Destroy the Tkinter window
 
 
@@ -92,6 +98,7 @@ def extract():
     source_label.configure(text=source_file)
     source_label.update()
 
+
 def open_file_dialog():
     return filedialog.askopenfilename(
         title="Select a Spreadsheet",
@@ -111,9 +118,21 @@ def enable_extract():
         extract_button.config(state="normal")
         extract_button.update()
 
+
 def disable_extract():
     global extract_button
     extract_button.config(state="disabled")
     extract_button.update()
+
+
+def configure_logging():
+    log_name = Path.home().joinpath("extractr.log").absolute()
+    rot_handler = RotatingFileHandler(log_name, maxBytes=5 * 1024 * 1024, backupCount=5)
+    log.basicConfig(
+        level=log.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[rot_handler],
+    )
+
 
 start_app_window()

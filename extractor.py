@@ -1,6 +1,9 @@
+import math
+import os
 from openpyxl import Workbook
 from openpyxl import load_workbook
 import re
+import logging as log
 
 INPUT_SHEET = "Input"
 REPORT_SHEET = "Report"
@@ -67,23 +70,27 @@ MAPPINGS = [
 
 
 def extract(source, destination):
-    print(f"Extracting data from {source} to {destination}...")  # UC
+    log.info(f"Extracting data from `{source}` to `{destination}` ...")
     wb_in = load_workbook(source, data_only=True)
     wb_out = load_workbook(destination)
-    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
 
     # print_mappings()
 
-    # printCell(wb_in, INPUT_SHEET, "D6")
-    # printCell(wb_in, INPUT_SHEET, "D7")
-    # printCell(wb_in, INPUT_SHEET, "I7")
+    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
+    last_row = wb_out.active.max_row
+    log.info(f"'{destination}' has {last_row} rows")
 
-    # wb_out.save()
+    wb_out.save(new_file_name(destination))
+    log.info("Done extracting")
 
 
 # def printCell(workbook, sheet, cellId):
 #     cell = workbook[sheet][cellId]
 #     print(f"Cell value: {cell.value}")
+
+def new_file_name(fname):
+    base, ext = os.path.splitext(fname)
+    return base + ".new" + ext
 
 
 def print_mappings():
@@ -95,22 +102,55 @@ def print_mappings():
         print(entry)
 
 
-def get_last_row(workbook):
-    return 1  # UC
-
-
 def copy_one_value(mapping):
     if "in2" in mapping:
         print(f"Mapping has second value")
 
 
+# Deal with either single value or a range
+# return NaN if conversion impossible
+def get_value(s):
+    if is_number(s):
+        return float(s)
+    elif is_range(s):
+        return mid_range(s)
+    else:
+        log.error(f"Can't parse {s} to number or range")
+        return math.nan
+
+
 def is_number(s):
-    return False if re.match(r'^[+-]?\d(>?\.\d+)?$', s) is None else True
+    return True if s=='nan' or re.match(r"^[+-]?\d+(>?\.\d+)?$", s) is not None else False
+
 
 def is_range(s):
-    return False if re.match(r'^[+-]?\d(>?\.\d+)? - [+-]?\d(>?\.\d+)?$', s) is None else True
+    return True if re.match(r'^[+-]?\d+(>?\.\d+)? - [+-]?\d+(>?\.\d+)?$', s) is not None else False
+
 
 def mid_range(s):
-    # split range string
-    # return average
-    return 0.0
+    parts = s.split("-", 4)
+    start = math.nan
+    end = math.nan
+    try:
+        match len(parts):
+            case 2:  # simple range
+                start = float(parts[0].strip())
+                end = float(parts[1].strip())
+            case 3:
+                if parts[0] == "":
+                    start = -float(parts[1].strip())
+                    end = float(parts[2].strip())
+                else:
+                    start = float(parts[0].strip())
+                    end = -float(parts[2].strip())
+            case 4:
+                start = -float(parts[1].strip())
+                end = -float(parts[3].strip())
+            case _:
+                log.error(f"Invalid range format: {s}")
+
+        return (start + end) / 2.0
+    except ValueError:
+        log.error(f"Invalid range format: {s}")
+
+    return math.nan

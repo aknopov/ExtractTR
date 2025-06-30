@@ -17,18 +17,20 @@ N_A = "N/A"
 MAPPINGS = [
     # sheet name, src cell, dest col
     {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 1},
-    {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 2},
+    # {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 1},
+    # {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 1},
-    {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 2},
+    # {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 1},
+    # {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 0},
+    # {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 1},
+    # {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 1},
-    {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 2},
+    # {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 1},
+    # {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 1},
-    {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 2},
+    # {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 1},
+    # {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "F21", "out": "L", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G21", "out": "L", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H21", "out": "L", "offset": 2},
@@ -70,11 +72,17 @@ MAPPINGS = [
     {"sheet": EIEUR_SHEET, "in1": "Y31", "out": "BH", "offset": 1},
     {"sheet": EIEUR_SHEET, "in1": "Y57", "out": "BH", "offset": 2},
     {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 0},
-    {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 1},
-    {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 2},
+    # {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 1},
+    # {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 2},
     {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 0},
-    {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 1},
-    {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 2},
+    # {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 1},
+    # {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 2},
+    {"sheet": RFKN_SHEET, "in1": "G75", "out": "BU", "offset": 0},
+    # {"sheet": RFKN_SHEET, "in1": "G75", "out": "BU", "offset": 1},
+    # {"sheet": RFKN_SHEET, "in1": "G75", "out": "BU", "offset": 2},
+    {"sheet": RFKN_SHEET, "in1": "G76", "out": "BV", "offset": 0},
+    # {"sheet": RFKN_SHEET, "in1": "G76", "out": "BV", "offset": 1},
+    # {"sheet": RFKN_SHEET, "in1": "G76", "out": "BV", "offset": 2},
     {"sheet": FLAC_SHEET, "in1": "AD22", "out": "BW", "offset": 0},
     {"sheet": FLAC_SHEET, "in1": "AD23", "out": "BW", "offset": 1},
     {"sheet": FLAC_SHEET, "in1": "AD24", "out": "BW", "offset": 2},
@@ -83,6 +91,9 @@ MAPPINGS = [
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "CG", "offset": 2},
 ]
 
+MERGE_COLS = [
+    "B", "D", "F", "G", "H", "AE", "AN", "AP", "BS", "BT", "BU", "BV", "BX"
+]
 
 def extract(source, destination):
     log.info(f"Extracting data from `{source}` to `{destination}` ...")
@@ -98,6 +109,9 @@ def extract(source, destination):
     for mapping in MAPPINGS:
         copy_one_value(wb_in, wb_out, last_row, mapping)
 
+    for col in MERGE_COLS:
+        merge_cells(wb_out, col, last_row)
+
     wb_out.save(new_file_name(destination))
     log.info("Done extracting")
 
@@ -107,13 +121,13 @@ def new_file_name(fname):
     return base + ".new" + ext
 
 
-def print_mappings():
-    for mapping in MAPPINGS:
-        entry = mapping["sheet"] + " (" + mapping["in1"]
-        if "in2" in mapping:
-            entry += "+" + mapping["in2"]
-        entry += ") -> " + mapping["out"]
-        print(entry)
+# def print_mappings():
+#     for mapping in MAPPINGS:
+#         entry = mapping["sheet"] + " (" + mapping["in1"]
+#         if "in2" in mapping:
+#             entry += "+" + mapping["in2"]
+#         entry += ") -> " + mapping["out"]
+#         print(entry)
 
 
 def copy_one_value(wb_in, wb_out, last_row, mapping):
@@ -129,7 +143,12 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
         column=convert_column(mapping["out"]),
         value=convert_na(v)
     )
-   
+
+
+def merge_cells(wb_out, col, last_row):
+    colIdx = convert_column(col)
+    wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=colIdx, end_column=colIdx)
+
 
 def convert_column(s):
     if isinstance(s, str):

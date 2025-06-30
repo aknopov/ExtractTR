@@ -9,6 +9,7 @@ from pathlib import Path
 source_dir = ""
 source_file = ""
 destination_file = ""
+button_width = 15
 label_width = 70
 
 
@@ -31,19 +32,19 @@ def start_app_window():
     source_f_button = tk.Button(
         frame,
         text="Source File",
-        width=10,
+        width=button_width,
         command=select_source_file
     )
     source_d_button = tk.Button(
         frame,
         text="Source Directory",
-        width=15,
+        width=button_width,
         command=select_source_dir
     )
     destination_button = tk.Button(
         frame,
         text="Destination File",
-        width=15,
+        width=button_width,
         command=select_destination_file,
     )
     extract_button = tk.Button(
@@ -119,19 +120,15 @@ def extract():
             "Either source directory or file should be specified.\nUnselect one with Cancel button in a dialog.")
         return
 
-    disable_extract()
+    pre_extract_ui()
 
     if source_file != "":
         ex.extract_file(source_file, destination_file)
     else:
         ex.extract_dir(source_dir, destination_file)
 
-    source_file = ""
-    source_dir = ""
-    source_f_label.configure(text=source_file)
-    source_f_label.update()
-    source_d_label.configure(text=source_dir)
-    source_d_label.update()
+    post_extract_ui()
+
 
 def open_dir_dialog():
     lnx_path = filedialog.askdirectory(
@@ -150,6 +147,23 @@ def open_file_dialog():
         ],
     )
     return os.path.normpath(lnx_path) if lnx_path != "" else ""
+
+
+def pre_extract_ui():
+    root.config(cursor="watch")
+    root.update()
+    disable_extract()
+
+
+def post_extract_ui():
+    source_file = ""
+    source_dir = ""
+    source_f_label.configure(text=source_file)
+    source_f_label.update()
+    source_d_label.configure(text=source_dir)
+    source_d_label.update()
+    root.config(cursor="arrow")
+    root.update()
 
 
 def enable_extract():

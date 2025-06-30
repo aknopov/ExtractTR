@@ -75,26 +75,60 @@ MERGE_COLS = [
     "B", "D", "F", "G", "H", "AE", "AN", "AP", "BS", "BT", "BU", "BV", "BX"
 ]
 
-def extract(source, destination):
+def extract_file(source, destination):
+    log.info(f"Extracting data from `{source}` to `{destination}` ...")
+    wb_out = load_workbook(destination)
+    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
+
+    extract_one(source, destination, wb_out)
+
+    os.rename(destination, new_file_name(destination))
+    wb_out.save(destination)
+    log.info("Done file extracting")
+
+
+def extract_dir(source, destination):
+    log.info(f"Extracting data from `{source}` to `{destination}` ...")
+    wb_out = load_workbook(destination)
+    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
+
+    # Get list of *.xlsx files
+    excel_files = list_excel_files(source)
+    if len(excel_files) == 0:
+        log.warninig(f"No excel files found in ${source}")
+        return
+    
+    for fn in excel_files:
+        extract_one(fn, destination, wb_out)
+
+    os.rename(destination, new_file_name(destination))
+    wb_out.save(destination)
+    log.info("Done directory extracting")
+
+
+def list_excel_files(dir_path):
+    excel_files = []
+    for fn in os.listdir(dir_path):
+        full_path = os.path.join(dir_path, fn)
+        if fn.endswith('.xlsx') and os.path.isfile(full_path):
+            excel_files.append(full_path)
+
+    return excel_files
+
+
+def extract_one(source, destination, wb_out):
     log.info(f"Extracting data from `{source}` to `{destination}` ...")
     wb_in = load_workbook(source, data_only=True)
-    wb_out = load_workbook(destination)
 
-    # print_mappings()
-
-    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
     last_row = wb_out.active.max_row
-    log.info(f"Extracting data in '{destination}' to row {last_row}")
+    log.info(f"Extracting data to '{destination}' on row {last_row}")
+
 
     for mapping in MAPPINGS:
         copy_one_value(wb_in, wb_out, last_row, mapping)
 
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
-
-    os.rename(destination, new_file_name(destination))
-    wb_out.save(destination)
-    log.info("Done extracting")
 
 
 def new_file_name(fname):

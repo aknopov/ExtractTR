@@ -32,6 +32,11 @@ class TestExtractor(unittest.TestCase):
         if os.path.exists(self.destination_file + ".new"):
             os.remove(self.destination_file + ".new")
 
+    def test_new_file_name(self):
+        self.assertEqual(ex.new_file_name("file.ext"), "file.org.ext")
+        self.assertEqual(ex.new_file_name("/path/file.ext"), "/path/file.org.ext")
+        self.assertEqual(ex.new_file_name("file"), "file.org")
+
     def test_is_number(self):
         self.assertTrue(ex.is_number("123"))
         self.assertTrue(ex.is_number("-123.45"))

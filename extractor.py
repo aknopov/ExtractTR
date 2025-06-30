@@ -104,7 +104,7 @@ def extract(source, destination):
 
     assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
     last_row = wb_out.active.max_row
-    log.info(f"'{destination}' has {last_row} rows")
+    log.info(f"Extracting data in '{destination}' to row {last_row}")
 
     for mapping in MAPPINGS:
         copy_one_value(wb_in, wb_out, last_row, mapping)
@@ -112,13 +112,14 @@ def extract(source, destination):
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
 
-    wb_out.save(new_file_name(destination))
+    os.rename(destination, new_file_name(destination))
+    wb_out.save(destination)
     log.info("Done extracting")
 
 
 def new_file_name(fname):
     base, ext = os.path.splitext(fname)
-    return base + ".new" + ext
+    return base + ".org" + ext
 
 
 # def print_mappings():
@@ -205,14 +206,14 @@ def convert_range(s):
             case 2:  # simple range
                 start = float(parts[0].strip())
                 end = float(parts[1].strip())
-            case 3:
+            case 3: # one value is negative
                 if parts[0] == "":
                     start = -float(parts[1].strip())
                     end = float(parts[2].strip())
                 else:
                     start = float(parts[0].strip())
                     end = -float(parts[2].strip())
-            case 4:
+            case 4: # two negative values
                 start = -float(parts[1].strip())
                 end = -float(parts[3].strip())
             case _:

@@ -15,22 +15,12 @@ OUTPUT_SHEET = "Summary by Type"
 N_A = "N/A"
 
 MAPPINGS = [
-    # sheet name, src cell, dest col
+    # sheet name, src cell 1, [src cell 2,] dest col
     {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 0},
-    # {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 1},
-    # {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 0},
-    # {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 1},
-    # {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 0},
-    # {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 1},
-    # {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 0},
-    # {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 1},
-    # {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 0},
-    # {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 1},
-    # {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "F21", "out": "L", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G21", "out": "L", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H21", "out": "L", "offset": 2},
@@ -47,8 +37,6 @@ MAPPINGS = [
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 2},
     # ? {"sheet": INPUT_SHEET, "D11", "AN", "offset": 0}
-    # ? {"sheet": INPUT_SHEET, "D11", "AN", "offset": 1}
-    # ? {"sheet": INPUT_SHEET, "D11", "AN", "offset": 2}
     {"sheet": DILATION_SHEET, "in1": "V4", "out": "AQ", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V30", "out": "AQ", "offset": 1},
     {"sheet": DILATION_SHEET, "in1": "V51", "out": "AQ", "offset": 2},
@@ -72,17 +60,9 @@ MAPPINGS = [
     {"sheet": EIEUR_SHEET, "in1": "Y31", "out": "BH", "offset": 1},
     {"sheet": EIEUR_SHEET, "in1": "Y57", "out": "BH", "offset": 2},
     {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 0},
-    # {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 1},
-    # {"sheet": RFKN_SHEET, "in1": "G56", "out": "BS", "offset": 2},
     {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 0},
-    # {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 1},
-    # {"sheet": RFKN_SHEET, "in1": "G57", "out": "BT", "offset": 2},
     {"sheet": RFKN_SHEET, "in1": "G75", "out": "BU", "offset": 0},
-    # {"sheet": RFKN_SHEET, "in1": "G75", "out": "BU", "offset": 1},
-    # {"sheet": RFKN_SHEET, "in1": "G75", "out": "BU", "offset": 2},
     {"sheet": RFKN_SHEET, "in1": "G76", "out": "BV", "offset": 0},
-    # {"sheet": RFKN_SHEET, "in1": "G76", "out": "BV", "offset": 1},
-    # {"sheet": RFKN_SHEET, "in1": "G76", "out": "BV", "offset": 2},
     {"sheet": FLAC_SHEET, "in1": "AD22", "out": "BW", "offset": 0},
     {"sheet": FLAC_SHEET, "in1": "AD23", "out": "BW", "offset": 1},
     {"sheet": FLAC_SHEET, "in1": "AD24", "out": "BW", "offset": 2},

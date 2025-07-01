@@ -30,13 +30,16 @@ MAPPINGS = [
     {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "R171", "out": "AH", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "R171", "out": "AH", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "R171", "out": "AH", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 1},
+    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 2},
-    # ? {"sheet": INPUT_SHEET, "D11", "AN", "offset": 0}
+    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 1},
+    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 2},
+    {"sheet": INPUT_SHEET, "in1": "D11", "out": "AN", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V4", "out": "AQ", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V30", "out": "AQ", "offset": 1},
     {"sheet": DILATION_SHEET, "in1": "V51", "out": "AQ", "offset": 2},
@@ -52,7 +55,6 @@ MAPPINGS = [
     {"sheet": EIEUR_SHEET, "in1": "Y2", "out": "BC", "offset": 0},
     {"sheet": EIEUR_SHEET, "in1": "Y24", "out": "BC", "offset": 1},
     {"sheet": EIEUR_SHEET, "in1": "Y49", "out": "BC", "offset": 2},
-    {"sheet": EIEUR_SHEET, "in1": "Y2", "out": "BD", "offset": 0},
     {"sheet": EIEUR_SHEET, "in1": "Y19", "out": "BE", "offset": 0},
     {"sheet": EIEUR_SHEET, "in1": "Y42", "out": "BE", "offset": 1},
     {"sheet": EIEUR_SHEET, "in1": "Y67", "out": "BE", "offset": 2},
@@ -72,7 +74,7 @@ MAPPINGS = [
 ]
 
 MERGE_COLS = [
-    "B", "D", "F", "G", "H", "AE", "AN", "AP", "BS", "BT", "BU", "BV", "BX"
+    "B", "D", "F", "G", "H", "AN", "BS", "BT", "BU", "BV"
 ]
 
 def extract_file(source, destination):
@@ -117,12 +119,10 @@ def list_excel_files(dir_path):
 
 
 def extract_one(source, destination, wb_out):
-    log.info(f"Extracting data from `{source}` to `{destination}` ...")
     wb_in = load_workbook(source, data_only=True)
 
     last_row = wb_out.active.max_row
-    log.info(f"Extracting data to '{destination}' on row {last_row}")
-
+    log.info(f"Extracting data from '{source}' to '{destination}' from row {last_row} ...")
 
     for mapping in MAPPINGS:
         copy_one_value(wb_in, wb_out, last_row, mapping)
@@ -153,19 +153,23 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
         if not math.isnan(v) and not math.isnan(v2):
             v = (v + v2) / 2.0
 
+    v_conv = convert_na(v)
+    if v_conv == N_A:
+        log.warning(f"Couldn't extract value from sheet '{mapping["sheet"]}', cell '{mapping["in1"]}'")
+
     wb_out.active.cell(
         row=last_row + mapping["offset"] + 1,
-        column=convert_column(mapping["out"]),
-        value=convert_na(v)
+        column=col_name_to_idx(mapping["out"]),
+        value=v_conv
     )
 
 
 def merge_cells(wb_out, col, last_row):
-    colIdx = convert_column(col)
+    colIdx = col_name_to_idx(col)
     wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=colIdx, end_column=colIdx)
 
 
-def convert_column(s):
+def col_name_to_idx(s):
     if isinstance(s, str):
         s = s.strip().upper()
     if len(s) == 1:
@@ -175,6 +179,16 @@ def convert_column(s):
     else:
         log.error(f"Invalid column format: {s}")
         return 0
+
+def col_idx_to_name(i):
+    if i < 27:
+        return chr(ord('A') + i - 1)
+    elif i < 26**2 -  1:
+        c1 = chr(ord('A') + (i - 1) // 26 - 1)
+        c2 = chr(ord('A') + (i - 1) % 26)
+        return c1 + c2
+    else:
+        return None
 
 def convert_na(value):
     # Convert None or NaN to 'N/A'

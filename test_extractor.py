@@ -66,16 +66,28 @@ class TestExtractor(unittest.TestCase):
         self.assertTrue(math.isnan(ex.convert_range("abc - def")))
         self.assertTrue(math.isnan(ex.convert_range("boo")))
 
-    def test_convert_column(self):
-        self.assertEqual(ex.convert_column("A"), 1)
-        self.assertEqual(ex.convert_column("B"), 2)
-        self.assertEqual(ex.convert_column("Z"), 26)
-        self.assertEqual(ex.convert_column("AA"), 27)
-        self.assertEqual(ex.convert_column("AB"), 28)
-        self.assertEqual(ex.convert_column("AZ"), 52)
-        self.assertEqual(ex.convert_column("BA"), 53)
-        self.assertEqual(ex.convert_column("CG"), 85)
-        self.assertEqual(ex.convert_column("ABC"), 0)
+    def test_col_name_to_idx(self):
+        self.assertEqual(ex.col_name_to_idx("A"), 1)
+        self.assertEqual(ex.col_name_to_idx("B"), 2)
+        self.assertEqual(ex.col_name_to_idx("Z"), 26)
+        self.assertEqual(ex.col_name_to_idx("AA"), 27)
+        self.assertEqual(ex.col_name_to_idx("AB"), 28)
+        self.assertEqual(ex.col_name_to_idx("AZ"), 52)
+        self.assertEqual(ex.col_name_to_idx("BA"), 53)
+        self.assertEqual(ex.col_name_to_idx("CG"), 85)
+        self.assertEqual(ex.col_name_to_idx("ABC"), 0)
+
+    def test_col_indes_to_name(self):
+        self.assertEqual(ex.col_idx_to_name(1), "A")
+        self.assertEqual(ex.col_idx_to_name(26), "Z")
+        self.assertEqual(ex.col_idx_to_name(27), "AA")
+        self.assertEqual(ex.col_idx_to_name(28), "AB")
+        self.assertEqual(ex.col_idx_to_name(52), "AZ")
+        self.assertEqual(ex.col_idx_to_name(53), "BA")
+        self.assertEqual(ex.col_idx_to_name(78), "BZ")
+        self.assertEqual(ex.col_idx_to_name(79), "CA")
+        self.assertEqual(ex.col_idx_to_name(85), "CG")
+        self.assertEqual(ex.col_idx_to_name(26**2-1), None)
 
     def test_convert_na(self):
         self.assertEqual(ex.convert_na(None), ex.N_A)

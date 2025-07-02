@@ -1,5 +1,6 @@
 import math
 import os
+import re
 from openpyxl import load_workbook, worksheet
 import logging as log
 import converter as cnv
@@ -99,7 +100,7 @@ def extract_dir(source, destination):
     # Get list of *.xlsx files
     excel_files = list_excel_files(source)
     if len(excel_files) == 0:
-        log.warninig(f"No excel files found in ${source}")
+        log.warning(f"No excel files found in ${source}")
         return
     
     for fn in excel_files:
@@ -117,7 +118,7 @@ def list_excel_files(dir_path):
     excel_files = []
     for fn in os.listdir(dir_path):
         full_path = os.path.join(dir_path, fn)
-        if fn.endswith('.xlsx') and os.path.isfile(full_path):
+        if re.match(r'.+\.xls[bmx]?$', fn) and os.path.isfile(full_path):
             excel_files.append(full_path)
 
     return excel_files
@@ -130,7 +131,10 @@ def extract_one(source, destination, wb_out):
     log.info(f"Extracting data from '{source}' to '{destination}' from row {last_row} ...")
 
     for mapping in MAPPINGS:
-        copy_one_value(wb_in, wb_out, last_row, mapping)
+        try:
+            copy_one_value(wb_in, wb_out, last_row, mapping)
+        except Exception as e:
+            log.error(f"Failed to extract data from '{source}': {e}")
     
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
@@ -197,7 +201,7 @@ def sort_rows(ws: worksheet, row_start: int, row_end: int, col_start: int, col_e
 
     keys=[]
     for i in range(row_start + shift, row_end + shift + 1):
-        val = ws.cell(row=i, column=SORT_COLUMN_IDX).value
+        val = ws.cell(row=i, column=SORT_COLUMN_IDX).value or ""
         keys.append((val, i))
     
     # Sorts by all fields in the tuple!

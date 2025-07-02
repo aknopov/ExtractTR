@@ -1,6 +1,7 @@
 import math
 import os
 import re
+from tkinter import messagebox
 from openpyxl import load_workbook, worksheet
 import logging as log
 import converter as cnv
@@ -78,41 +79,68 @@ MERGE_COLS = [
     "B", "D", "F", "G", "H", "AN", "BS", "BT", "BU", "BV"
 ]
 
+OK = messagebox.OK
+CANCEL = messagebox.CANCEL
 
 def extract_file(source, destination):
-    log.info(f"Extracting data from `{source}` to `{destination}` ...")
+    log.info("Extracting data from `%s` to `%s` ...", source, destination)
     wb_out = load_workbook(destination)
-    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
+    wb_out.active = wb_out[OUTPUT_SHEET]
 
     extract_one(source, destination, wb_out)
 
-    os.rename(destination, new_file_name(destination))
+    # Try twice
+    first_try = rename_orig(destination, True)
+    if first_try != OK and first_try != CANCEL and rename_orig(destination, False) != OK:
+        messagebox.showerror(message = f"Failed to save '{destination}'")
+        log.info("Failed to rename '%s'", destination)
+        return
+
     wb_out.save(destination)
     log.info("Done file extracting")
 
 
+def rename_orig(destination, first):
+    try:
+        os.rename(destination, new_file_name(destination))
+        return OK
+    except PermissionError:
+        if first:
+            return messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
+                                    "Either close other and retry or cancel")
+        else:
+            return CANCEL
+
+
 def extract_dir(source, destination):
-    log.info(f"Extracting data from `{source}` to `{destination}` ...")
+    log.info("Extracting data from '%s' to '%s' ...", source, destination)
     wb_out = load_workbook(destination)
-    assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
-    start_row = last_row = wb_out.active.max_row + 1
+    wb_out.active = wb_out[OUTPUT_SHEET]
+    start_row = wb_out.active.max_row + 1
 
     # Get list of *.xlsx files
     excel_files = list_excel_files(source)
     if len(excel_files) == 0:
-        log.warning(f"No excel files found in ${source}")
+        log.warning("No excel files found in '%s'", source)
         return
-    
+
     for fn in excel_files:
         extract_one(fn, destination, wb_out)
 
-    end_row = last_row = wb_out.active.max_row
+    end_row = wb_out.active.max_row
     sort_rows(wb_out.active, start_row, end_row, 1, LAST_COLUMN_IDX)
 
     os.rename(destination, new_file_name(destination))
     wb_out.save(destination)
     log.info("Done directory extracting")
 
+def save_workbook(wb, destination):
+    os.rename(destination, new_file_name(destination))
+    try:
+        wb.save(destination)
+    except Exception as e: # pylint: disable=broad-except
+        log.error("Failed to save file '%s': %s", destination, e)
+        os.rename(new_file_name(destination), destination)
 
 def list_excel_files(dir_path):
     excel_files = []
@@ -128,14 +156,14 @@ def extract_one(source, destination, wb_out):
     wb_in = load_workbook(source, data_only=True)
 
     last_row = wb_out.active.max_row
-    log.info(f"Extracting data from '{source}' to '{destination}' from row {last_row} ...")
+    log.info("Extracting data from '%s' to '%s' from row %d ...", source, destination, last_row)
 
     for mapping in MAPPINGS:
         try:
             copy_one_value(wb_in, wb_out, last_row, mapping)
-        except Exception as e:
-            log.error(f"Failed to extract data from '{source}': {e}")
-    
+        except Exception as e: # pylint: disable=broad-except
+            log.error("Failed to extract data from '%s': %s", source, e)
+
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
 
@@ -164,7 +192,8 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
 
     v_conv = cnv.convert_na(v)
     if v_conv == cnv.N_A:
-        log.warning(f"Couldn't extract value from sheet '{mapping["sheet"]}', cell '{mapping["in1"]}'")
+        log.warning("Couldn't extract value from sheet '%s', cell '%s'",
+                     mapping["sheet"], {mapping["in1"]})
 
     wb_out.active.cell(
         row = last_row + mapping["offset"] + 1,
@@ -174,8 +203,8 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
 
 
 def merge_cells(wb_out, col, last_row):
-    colIdx = cnv.col_name_to_idx(col)
-    wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=colIdx, end_column=colIdx)
+    col_idx = cnv.col_name_to_idx(col)
+    wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=col_idx, end_column=col_idx)
 
 
 # Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl

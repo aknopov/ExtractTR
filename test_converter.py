@@ -66,6 +66,7 @@ class TestConverter(unittest.TestCase):
 
     def test_convert_na(self):
         self.assertEqual(cnv.convert_na(None), cnv.N_A)
+        self.assertEqual(cnv.convert_na('#NUM!'), cnv.N_A)
         self.assertEqual(cnv.convert_na(math.nan), cnv.N_A)
         self.assertEqual(cnv.convert_na("text"), "text")
         self.assertEqual(cnv.convert_na(1.23), 1.23)

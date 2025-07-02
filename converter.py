@@ -13,7 +13,7 @@ def col_name_to_idx(s):
     elif len(s) == 2:
         return (ord(s[0]) - ord('A') + 1) * 26 + (ord(s[1]) - ord('A') + 1)
     else:
-        log.error(f"Invalid column format: {s}")
+        log.error("Invalid column data: %s", s)
         return 0
 
 def col_idx_to_name(i):
@@ -28,7 +28,7 @@ def col_idx_to_name(i):
 
 def convert_na(value):
     # Convert None or NaN to 'N/A'
-    if value is None or (isinstance(value, float) and math.isnan(value)):
+    if value is None or value == '#NUM!' or (isinstance(value, float) and math.isnan(value)):
         return N_A
     return value
 
@@ -49,7 +49,7 @@ def convert_value(s):
     elif is_range(s):
         return convert_range(s)
     else:
-        log.error(f"Can't parse {s} to number or range")
+        log.error("Can't parse %s to number or range", s)
         return math.nan
 
 
@@ -58,7 +58,7 @@ def is_number(s):
 
 
 def is_range(s):
-    return True if re.match(r'^[+-]?\d+(>?\.\d+)? - [+-]?\d+(>?\.\d+)?$', s) is not None else False
+    return True if re.match(r'^[+-]?\d+(>?\.\d+)? *- *[+-]?\d+(>?\.\d+)?$', s) is not None else False
 
 
 def convert_range(s):
@@ -81,10 +81,10 @@ def convert_range(s):
                 start = -float(parts[1].strip())
                 end = -float(parts[3].strip())
             case _:
-                log.error(f"Invalid range format: {s}")
+                log.error("Invalid range format: %s", s)
 
         return (start + end) / 2.0
     except ValueError:
-        log.error(f"Invalid range format: {s}")
+        log.error("Invalid range format: %s", s)
 
     return math.nan

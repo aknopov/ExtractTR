@@ -1,195 +1,177 @@
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import extractor as ex
 import logging as log
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
-source_dir = ""
-source_file = ""
-destination_file = ""
-button_width = 15
-label_width = 70
+import extractor as ex
 
 
-def start_app_window():
-    global root
-    global source_f_label
-    global source_d_label
-    global destination_label
-    global extract_button
-
-    configure_logging()
-
-    root = tk.Tk()
-    root.title("Soil Test Data Extractor")
-    root.geometry("500x260")
-    root.resizable(False, False)
-    root.protocol("WM_DELETE_WINDOW", on_closing)
-
-    frame = tk.Frame(root)
-    source_f_button = tk.Button(
-        frame,
-        text="Source File",
-        width=button_width,
-        command=select_source_file
-    )
-    source_d_button = tk.Button(
-        frame,
-        text="Source Directory",
-        width=button_width,
-        command=select_source_dir
-    )
-    destination_button = tk.Button(
-        frame,
-        text="Destination File",
-        width=button_width,
-        command=select_destination_file,
-    )
-    extract_button = tk.Button(
-        root,
-        text="Extract",
-        state="disabled",
-        command=extract,
-    )
-    source_f_label = tk.Label(
-        frame, borderwidth=1, width=label_width, relief="groove", anchor="w"
-    )
-    source_d_label = tk.Label(
-        frame, borderwidth=1, width=label_width, relief="groove", anchor="w"
-    )
-    destination_label = tk.Label(
-        frame, borderwidth=1, width=label_width, relief="groove", anchor="w"
-    )
-
-    root.columnconfigure(0, weight=1)
-    frame.grid(row=0, column=0, padx=10, pady=10, sticky="w")
-
-    frame.columnconfigure(0, weight=1)
-    source_d_button.grid(row=0, column=0, sticky="w")
-    source_d_label.grid(row=1, column=0, sticky="w", pady=7)
-    source_f_button.grid(row=2, column=0, sticky="w", pady=10)
-    source_f_label.grid(row=3, column=0, sticky="w")
-    destination_button.grid(row=4, column=0, sticky="w", pady=10)
-    destination_label.grid(row=5, column=0, sticky="w")
-
-    extract_button.grid(row=1, column=0, padx=30, pady=15)
-
-    root.mainloop()
+BUTTON_WIDTH = 15
+LABEL_WIDTH = 70
 
 
-def on_closing():
-    # UC cleanup and do not close before completing
-    root.destroy()  # Destroy the Tkinter window
+class ExtractTRApp:
+    """
+    A class responsible for initializing GUI components and getting  source and destination paths.
+    """
+    def __init__(self):
+        self.source_dir = ""
+        self.source_file = ""
+        self.destination_file = ""
 
+        self.root = None
+        self.source_f_label = None
+        self.source_d_label = None
+        self.destination_label = None
+        self.extract_button = None
 
-def select_source_file():
-    global source_file
-    global source_f_label
-    source_file = open_file_dialog()
-    source_f_label.configure(text=source_file)
-    source_f_label.update()
-    enable_extract()
+    def start_app_window(self):
+        self.configure_logging()
 
+        self.root = tk.Tk()
+        self.root.title("Soil Test Data Extractor")
+        self.root.geometry("500x260")
+        self.root.resizable(False, False)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-def select_source_dir():
-    global source_dir
-    global source_d_label
-    source_dir = open_dir_dialog()
-    source_d_label.configure(text=source_dir)
-    source_d_label.update()
-    enable_extract()
+        frame = tk.Frame(self.root)
+        source_f_button = tk.Button(
+            frame,
+            text="Source File",
+            width=BUTTON_WIDTH,
+            command=self.select_source_file
+        )
+        source_d_button = tk.Button(
+            frame,
+            text="Source Directory",
+            width=BUTTON_WIDTH,
+            command=self.select_source_dir
+        )
+        destination_button = tk.Button(
+            frame,
+            text="Destination File",
+            width=BUTTON_WIDTH,
+            command=self.select_destination_file,
+        )
+        self.extract_button = tk.Button(
+            self.root,
+            text="Extract",
+            state="disabled",
+            command=self.extract,
+        )
+        self.source_f_label = tk.Label(
+            frame, borderwidth=1, width=LABEL_WIDTH, relief="groove", anchor="w"
+        )
+        self.source_d_label = tk.Label(
+            frame, borderwidth=1, width=LABEL_WIDTH, relief="groove", anchor="w"
+        )
+        self.destination_label = tk.Label(
+            frame, borderwidth=1, width=LABEL_WIDTH, relief="groove", anchor="w"
+        )
 
+        self.root.columnconfigure(0, weight=1)
+        frame.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-def select_destination_file():
-    global destination_file
-    global destination_label
-    destination_file = open_file_dialog()
-    destination_label.configure(text=destination_file)
-    destination_label.update()
-    enable_extract()
+        frame.columnconfigure(0, weight=1)
+        source_d_button.grid(row=0, column=0, sticky="w")
+        self.source_d_label.grid(row=1, column=0, sticky="w", pady=7)
+        source_f_button.grid(row=2, column=0, sticky="w", pady=10)
+        self.source_f_label.grid(row=3, column=0, sticky="w")
+        destination_button.grid(row=4, column=0, sticky="w", pady=10)
+        self.destination_label.grid(row=5, column=0, sticky="w")
 
+        self.extract_button.grid(row=1, column=0, padx=30, pady=15)
 
-def extract():
-    global source_file
-    global source_dir
+        self.root.mainloop()
 
-    if source_file != "" and source_dir != "":
-        messagebox.showerror("Error",
-            "Either source directory or file should be specified.\nUnselect one with Cancel button in a dialog.")
-        return
+    def on_closing(self):
+        self.root.destroy()
 
-    pre_extract_ui()
+    def select_source_file(self):
+        self.source_file = self.open_file_dialog()
+        self.source_f_label.configure(text=self.source_file)
+        self.source_f_label.update()
+        self.enable_extract()
 
-    if source_file != "":
-        ex.extract_file(source_file, destination_file)
-    else:
-        ex.extract_dir(source_dir, destination_file)
+    def select_source_dir(self):
+        self.source_dir = self.open_dir_dialog()
+        self.source_d_label.configure(text=self.source_dir)
+        self.source_d_label.update()
+        self.enable_extract()
 
-    post_extract_ui()
+    def select_destination_file(self):
+        self.destination_file = self.open_file_dialog()
+        self.destination_label.configure(text=self.destination_file)
+        self.destination_label.update()
+        self.enable_extract()
 
+    def extract(self):
+        if self.source_file != "" and self.source_dir != "":
+            messagebox.showerror("Error",
+                "Either source directory or file should be specified.\n" \
+                "Unselect one with Cancel button in a dialog.")
+            return
 
-def open_dir_dialog():
-    lnx_path = filedialog.askdirectory(
-        title="Select a Folder with Spreadsheets",
-        initialdir=".",
-    )
-    return os.path.normpath(lnx_path) if lnx_path != "" else ""
+        self.pre_extract_ui()
 
-def open_file_dialog():
-    lnx_path = filedialog.askopenfilename(
-        title="Select a Spreadsheet",
-        initialdir=".",
-        filetypes=[
-            ("Excel files", "*.xlsx"),
-            ("All files", "*.*"),
-        ],
-    )
-    return os.path.normpath(lnx_path) if lnx_path != "" else ""
+        if self.source_file != "":
+            ex.extract_file(self.source_file, self.destination_file)
+        else:
+            ex.extract_dir(self.source_dir, self.destination_file)
 
+        self.post_extract_ui()
 
-def pre_extract_ui():
-    root.config(cursor="watch")
-    root.update()
-    disable_extract()
+    def open_dir_dialog(self):
+        lnx_path = filedialog.askdirectory(
+            title="Select a Folder with Spreadsheets",
+            initialdir=".",
+        )
+        return os.path.normpath(lnx_path) if lnx_path != "" else ""
 
+    def open_file_dialog(self):
+        lnx_path = filedialog.askopenfilename(
+            title="Select a Spreadsheet",
+            initialdir=".",
+            filetypes=[
+                ("Excel files", "*.xlsx"),
+                ("All files", "*.*"),
+            ],
+        )
+        return os.path.normpath(lnx_path) if lnx_path != "" else ""
 
-def post_extract_ui():
-    source_file = ""
-    source_dir = ""
-    source_f_label.configure(text=source_file)
-    source_f_label.update()
-    source_d_label.configure(text=source_dir)
-    source_d_label.update()
-    root.config(cursor="arrow")
-    root.update()
+    def pre_extract_ui(self):
+        self.root.config(cursor="watch")
+        self.root.update()
+        self.disable_extract()
 
+    def post_extract_ui(self):
+        self.source_file = ""
+        self.source_dir = ""
+        self.source_f_label.configure(text=self.source_file)
+        self.source_f_label.update()
+        self.source_d_label.configure(text=self.source_dir)
+        self.source_d_label.update()
+        self.root.config(cursor="arrow")
+        self.root.update()
 
-def enable_extract():
-    global source_file
-    global source_dir
-    global destination_file
-    global extract_button
-    if (source_file != "" or source_dir != "") and destination_file != "":
-        extract_button.config(state="normal")
-        extract_button.update()
+    def enable_extract(self):
+        if (self.source_file != "" or self.source_dir != "") and self.destination_file != "":
+            self.extract_button.config(state="normal")
+            self.extract_button.update()
 
+    def disable_extract(self):
+        self.extract_button.config(state="disabled")
+        self.extract_button.update()
 
-def disable_extract():
-    global extract_button
-    extract_button.config(state="disabled")
-    extract_button.update()
+    def configure_logging(self):
+        log_name = Path.home().joinpath("extractr.log").absolute()
+        rot_handler = RotatingFileHandler(log_name, maxBytes=5 * 1024 * 1024, backupCount=5)
+        log.basicConfig(
+            level=log.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[rot_handler],
+        )
 
-
-def configure_logging():
-    log_name = Path.home().joinpath("extractr.log").absolute()
-    rot_handler = RotatingFileHandler(log_name, maxBytes=5 * 1024 * 1024, backupCount=5)
-    log.basicConfig(
-        level=log.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[rot_handler],
-    )
-
-
-start_app_window()
+app = ExtractTRApp()
+app.start_app_window()

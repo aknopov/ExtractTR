@@ -1,6 +1,6 @@
 import math
 import os
-from openpyxl import load_workbook, Worksheet
+from openpyxl import load_workbook, worksheet
 import logging as log
 import converter as cnv
 
@@ -11,7 +11,8 @@ EIEUR_SHEET = "Ei-Eur"
 RFKN_SHEET = "Rf-K-n"
 FLAC_SHEET = "FLAC1"
 OUTPUT_SHEET = "Summary by Type"
-SORT_COLUMN=cnv.col_name_to_idx("CG")
+SORT_COLUMN_IDX = cnv.col_name_to_idx("CG")
+LAST_COLUMN_IDX = SORT_COLUMN_IDX
 
 MAPPINGS = [
     # sheet name, src cell 1, [src cell 2,] dest col
@@ -76,6 +77,7 @@ MERGE_COLS = [
     "B", "D", "F", "G", "H", "AN", "BS", "BT", "BU", "BV"
 ]
 
+
 def extract_file(source, destination):
     log.info(f"Extracting data from `{source}` to `{destination}` ...")
     wb_out = load_workbook(destination)
@@ -92,6 +94,7 @@ def extract_dir(source, destination):
     log.info(f"Extracting data from `{source}` to `{destination}` ...")
     wb_out = load_workbook(destination)
     assert OUTPUT_SHEET == wb_out.sheetnames[wb_out._active_sheet_index]
+    start_row = last_row = wb_out.active.max_row + 1
 
     # Get list of *.xlsx files
     excel_files = list_excel_files(source)
@@ -101,6 +104,9 @@ def extract_dir(source, destination):
     
     for fn in excel_files:
         extract_one(fn, destination, wb_out)
+
+    end_row = last_row = wb_out.active.max_row
+    sort_rows(wb_out.active, start_row, end_row, 1, LAST_COLUMN_IDX)
 
     os.rename(destination, new_file_name(destination))
     wb_out.save(destination)
@@ -125,7 +131,7 @@ def extract_one(source, destination, wb_out):
 
     for mapping in MAPPINGS:
         copy_one_value(wb_in, wb_out, last_row, mapping)
-
+    
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
 
@@ -159,7 +165,7 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
     wb_out.active.cell(
         row = last_row + mapping["offset"] + 1,
         column = cnv.col_name_to_idx(mapping["out"]),
-        value=v_conv
+        value = v_conv
     )
 
 
@@ -168,41 +174,38 @@ def merge_cells(wb_out, col, last_row):
     wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=colIdx, end_column=colIdx)
 
 
-def cell_sorter(c):
-    return c[SORT_COLUMN]
-    # return t[1] + " " + t[0][::-1]
-
-
-# From https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
+# Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
 # Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
-def sort_rows(ws: Worksheet, row_start: int, row_end: int, col_start: int, col_end: int, sorter=None):
-    """ Sorts given rows of the sheet
+def sort_rows(ws: worksheet, row_start: int, row_end: int, col_start: int, col_end: int):
+    """ Sorts range in the sheet
         row_start   First row to be sorted
-        row_end     Last row to be sorted (default last row)
-        col_start   Start column to be considered in sort
-        col_end     End column to be considered in sort
-        sorter      Function that accepts a tuple of values and returns a sortable key
+        row_end     Last row to be sorted (inclusive)
+        col_start   Start column to be sorted
+        col_end     End column to be sorted (inclusive)
     """
 
     bottom = ws.max_row
-    right = cnv.col_idx_to_name(ws.max_column)
 
-    cell_rows = {}
-    cols = range(col_start, col_end + 1)
-    for row in range(row_start, row_end + 1):
-        key = []
-        for col in cols:
-            key.append(ws.cell(row, col).value)
-        cell_rows[key] = cell_rows.get(key, set()).union({row})
+    col_name_start = cnv.col_idx_to_name(col_start)
+    col_name_end = cnv.col_idx_to_name(col_end)
 
-    order = sorted(cell_rows, key=sorter)
+    org_range = col_name_start + str(row_start) + ':' + col_name_end + str(row_end)
+    shift = bottom + 1 - row_start
 
-    ws.move_range(f"A{row_start}:{right}{row_end}", bottom)
+    # Move whole range to the bottom
+    ws.move_range(org_range, rows = shift)
 
-    dest = row_start
-    for src_key in order:
-        for row in cell_rows[src_key]:
-            src = row + bottom
-            dist = dest - src
-            ws.move_range(f"A{src}:{right}{src}", dist)
-            dest += 1
+    keys=[]
+    for i in range(row_start + shift, row_end + shift + 1):
+        val = ws.cell(row=i, column=SORT_COLUMN_IDX).value
+        keys.append((val, i))
+    
+    # Sorts by all fields in the tuple!
+    keys.sort()
+
+    # Move rows from original place to destination in sorted order
+    to_row = row_start
+    for key in keys:
+        row_range = col_name_start + str(key[1]) + ':' + col_name_end + str(key[1])
+        ws.move_range(row_range, rows = to_row - key[1])
+        to_row += 1

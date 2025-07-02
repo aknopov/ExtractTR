@@ -1,9 +1,8 @@
 import math
 import os
-from openpyxl import Workbook
-from openpyxl import load_workbook
-import re
+from openpyxl import load_workbook, Worksheet
 import logging as log
+import converter as cnv
 
 INPUT_SHEET = "Input"
 REPORT_SHEET = "Report"
@@ -12,7 +11,7 @@ EIEUR_SHEET = "Ei-Eur"
 RFKN_SHEET = "Rf-K-n"
 FLAC_SHEET = "FLAC1"
 OUTPUT_SHEET = "Summary by Type"
-N_A = "N/A"
+SORT_COLUMN=cnv.col_name_to_idx("CG")
 
 MAPPINGS = [
     # sheet name, src cell 1, [src cell 2,] dest col
@@ -146,109 +145,64 @@ def new_file_name(fname):
 
 
 def copy_one_value(wb_in, wb_out, last_row, mapping):
-    v = may_be_convert(wb_in[mapping["sheet"]][mapping["in1"]].value)
+    v = cnv.may_be_convert(wb_in[mapping["sheet"]][mapping["in1"]].value)
 
     if "in2" in mapping:
-        v2 = may_be_convert(wb_in[mapping["sheet"]][mapping["in2"]].value)
+        v2 = cnv.may_be_convert(wb_in[mapping["sheet"]][mapping["in2"]].value)
         if not math.isnan(v) and not math.isnan(v2):
             v = (v + v2) / 2.0
 
-    v_conv = convert_na(v)
-    if v_conv == N_A:
+    v_conv = cnv.convert_na(v)
+    if v_conv == cnv.N_A:
         log.warning(f"Couldn't extract value from sheet '{mapping["sheet"]}', cell '{mapping["in1"]}'")
 
     wb_out.active.cell(
-        row=last_row + mapping["offset"] + 1,
-        column=col_name_to_idx(mapping["out"]),
+        row = last_row + mapping["offset"] + 1,
+        column = cnv.col_name_to_idx(mapping["out"]),
         value=v_conv
     )
 
 
 def merge_cells(wb_out, col, last_row):
-    colIdx = col_name_to_idx(col)
+    colIdx = cnv.col_name_to_idx(col)
     wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=colIdx, end_column=colIdx)
 
 
-def col_name_to_idx(s):
-    if isinstance(s, str):
-        s = s.strip().upper()
-    if len(s) == 1:
-        return ord(s) - ord('A') + 1
-    elif len(s) == 2:
-        return (ord(s[0]) - ord('A') + 1) * 26 + (ord(s[1]) - ord('A') + 1)
-    else:
-        log.error(f"Invalid column format: {s}")
-        return 0
-
-def col_idx_to_name(i):
-    if i < 27:
-        return chr(ord('A') + i - 1)
-    elif i < 26**2 -  1:
-        c1 = chr(ord('A') + (i - 1) // 26 - 1)
-        c2 = chr(ord('A') + (i - 1) % 26)
-        return c1 + c2
-    else:
-        return None
-
-def convert_na(value):
-    # Convert None or NaN to 'N/A'
-    if value is None or (isinstance(value, float) and math.isnan(value)):
-        return N_A
-    return value
+def cell_sorter(c):
+    return c[SORT_COLUMN]
+    # return t[1] + " " + t[0][::-1]
 
 
-def may_be_convert(v):
-    if isinstance(v, str):
-        v = v.strip()
-        if is_number(v) or is_range(v):
-            v = convert_value(v)
-    return v
+# From https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
+# Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
+def sort_rows(ws: Worksheet, row_start: int, row_end: int, col_start: int, col_end: int, sorter=None):
+    """ Sorts given rows of the sheet
+        row_start   First row to be sorted
+        row_end     Last row to be sorted (default last row)
+        col_start   Start column to be considered in sort
+        col_end     End column to be considered in sort
+        sorter      Function that accepts a tuple of values and returns a sortable key
+    """
 
+    bottom = ws.max_row
+    right = cnv.col_idx_to_name(ws.max_column)
 
-# Deal with either single value or a range
-# return NaN if conversion impossible
-def convert_value(s):
-    if is_number(s):
-        return float(s)
-    elif is_range(s):
-        return convert_range(s)
-    else:
-        log.error(f"Can't parse {s} to number or range")
-        return math.nan
+    cell_rows = {}
+    cols = range(col_start, col_end + 1)
+    for row in range(row_start, row_end + 1):
+        key = []
+        for col in cols:
+            key.append(ws.cell(row, col).value)
+        cell_rows[key] = cell_rows.get(key, set()).union({row})
 
+    order = sorted(cell_rows, key=sorter)
 
-def is_number(s):
-    return True if s=='nan' or re.match(r"^[+-]?\d+(>?\.\d+)?$", s) is not None else False
+    ws.move_range(f"A{row_start}:{right}{row_end}", bottom)
 
-
-def is_range(s):
-    return True if re.match(r'^[+-]?\d+(>?\.\d+)? - [+-]?\d+(>?\.\d+)?$', s) is not None else False
-
-
-def convert_range(s):
-    parts = s.split("-", 4)
-    start = math.nan
-    end = math.nan
-    try:
-        match len(parts):
-            case 2:  # simple range
-                start = float(parts[0].strip())
-                end = float(parts[1].strip())
-            case 3: # one value is negative
-                if parts[0] == "":
-                    start = -float(parts[1].strip())
-                    end = float(parts[2].strip())
-                else:
-                    start = float(parts[0].strip())
-                    end = -float(parts[2].strip())
-            case 4: # two negative values
-                start = -float(parts[1].strip())
-                end = -float(parts[3].strip())
-            case _:
-                log.error(f"Invalid range format: {s}")
-
-        return (start + end) / 2.0
-    except ValueError:
-        log.error(f"Invalid range format: {s}")
-
-    return math.nan
+    dest = row_start
+    for src_key in order:
+        for row in cell_rows[src_key]:
+            src = row + bottom
+            dist = dest - src
+            ws.move_range(f"A{src}:{right}{src}", dist)
+            dest += 1

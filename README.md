@@ -11,4 +11,5 @@
 - The original destination file is preserved as `*.org.xlsx`.
 
 ## Developer Notes
-The program is written in Python 3 using the `tkinter` and `openpyxl` packages.
+- The program is written in Python 3 using the `tkinter` and `openpyxl` packages.
+- To create package, install "pyinstaller" and run `pyinstaller --clean ExtractTR.spec`. You might need to exclude project directory from virus protection.

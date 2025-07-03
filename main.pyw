@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import logging as log
@@ -33,6 +34,7 @@ class ExtractTRApp:
         self.root.title("Soil Test Data Extractor")
         self.root.geometry("500x260")
         self.root.resizable(False, False)
+        self.root.iconbitmap(self.get_resource_path('res/extract.ico'))
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         frame = tk.Frame(self.root)
@@ -85,6 +87,21 @@ class ExtractTRApp:
 
         self.root.mainloop()
 
+
+    def get_resource_path(self, rel_path):
+        base_path = ''
+        try:
+            # PyInstaller stores data files in a tmp folder referred to as _MEIPASS
+            base_path = sys._MEIPASS
+        except AttributeError:
+            pass
+
+        path = os.path.join(base_path, rel_path)
+
+        # If the path if exists
+        return path if os.path.exists(path) else None
+
+
     def on_closing(self):
         self.root.destroy()
 
@@ -134,7 +151,7 @@ class ExtractTRApp:
             title="Select a Spreadsheet",
             initialdir=".",
             filetypes=[
-                ("Excel files", "*.xlsx"),
+                ("Excel files", "*.xls*"),
                 ("All files", "*.*"),
             ],
         )

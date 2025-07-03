@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['main.pyw'],
+    ['../main.pyw'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -10,7 +10,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['test_extractor.py', 'test_converter.py'],
+    excludes=['../test_extractor.py', '../test_converter.py'],
     noarchive=False,
     optimize=0,
 )
@@ -20,7 +20,7 @@ exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
-    a.datas + [('res/extract.ico', 'res/extract.ico', 'DATA')],
+    a.datas + [('res/extract.ico', '../res/extract.ico', 'DATA')],
     [],
     name='ExtractTR',
     debug=False,
@@ -36,5 +36,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     version='version.txt',
-    icon=['res\\extract.ico'],
+    icon=['../res/extract.ico'],
 )

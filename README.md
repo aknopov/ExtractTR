@@ -7,9 +7,11 @@
 - It searches for source and destination files starting from its own directory.
 - Supported file formats: XLSX, XLSM, and XLSB.
 - To clear any path in the dialog, open the corresponding dialog and press the "Cancel" button.
-- The app creates a log file at `%USERPROFILE%\extractr.log`, which records processed files and any encountered errors. To view the log, copy this path into Explorer. You may be prompted to choose a program to open the file.
+- The app creates a log file at `%USERPROFILE%\extractr.log`, which records processed files and any encountered errors.
+To view the log, copy this path into Explorer. You may be prompted to choose a program to open the file.
 - The original destination file is preserved as `*.org.xlsx`.
 
 ## Developer Notes
 - The program is written in Python 3 using the `tkinter` and `openpyxl` packages.
-- To create package, install "pyinstaller" and run `pyinstaller --clean ExtractTR.spec`. You might need to exclude project directory from virus protection.
+- To create package, install "pyinstaller" and run `cd install; pyinstaller --clean ExtractTR.spec`.
+You might need to exclude project directory from virus protection.

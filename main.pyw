@@ -132,12 +132,8 @@ class ExtractTRApp:
 
         self.pre_extract_ui()
 
-        if self.source_file != "":
-            ex.extract_file(self.source_file, self.destination_file)
-        else:
-            ex.extract_dir(self.source_dir, self.destination_file)
+        self.root.after(100, self.do_extract)
 
-        self.post_extract_ui()
 
     def open_dir_dialog(self):
         lnx_path = filedialog.askdirectory(
@@ -161,6 +157,16 @@ class ExtractTRApp:
         self.root.config(cursor="watch")
         self.root.update()
         self.disable_extract()
+
+
+    def do_extract(self):
+        if self.source_file != "":
+            ex.extract_file(self.source_file, self.destination_file)
+        else:
+            ex.extract_dir(self.source_dir, self.destination_file)
+
+        self.post_extract_ui()
+
 
     def post_extract_ui(self):
         self.source_file = ""

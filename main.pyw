@@ -6,6 +6,7 @@ import logging as log
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import extractor as ex
+import prefs
 
 
 BUTTON_WIDTH = 15
@@ -106,19 +107,22 @@ class ExtractTRApp:
         self.root.destroy()
 
     def select_source_file(self):
-        self.source_file = self.open_file_dialog()
+        start_dir = prefs.get_dirs()[0]
+        self.source_file = self.open_file_dialog(start_dir)
         self.source_f_label.configure(text=self.source_file)
         self.source_f_label.update()
         self.enable_extract()
 
     def select_source_dir(self):
-        self.source_dir = self.open_dir_dialog()
+        start_dir = prefs.get_dirs()[0]
+        self.source_dir = self.open_dir_dialog(start_dir)
         self.source_d_label.configure(text=self.source_dir)
         self.source_d_label.update()
         self.enable_extract()
 
     def select_destination_file(self):
-        self.destination_file = self.open_file_dialog()
+        start_dir = prefs.get_dirs()[1]
+        self.destination_file = self.open_file_dialog(start_dir)
         self.destination_label.configure(text=self.destination_file)
         self.destination_label.update()
         self.enable_extract()
@@ -135,17 +139,17 @@ class ExtractTRApp:
         self.root.after(100, self.do_extract)
 
 
-    def open_dir_dialog(self):
+    def open_dir_dialog(self, start_dir):
         lnx_path = filedialog.askdirectory(
             title="Select a Folder with Spreadsheets",
-            initialdir=".",
+            initialdir=start_dir,
         )
         return os.path.normpath(lnx_path) if lnx_path != "" else ""
 
-    def open_file_dialog(self):
+    def open_file_dialog(self, start_dir):
         lnx_path = filedialog.askopenfilename(
             title="Select a Spreadsheet",
-            initialdir=".",
+            initialdir=start_dir,
             filetypes=[
                 ("Excel files", "*.xls*"),
                 ("All files", "*.*"),
@@ -161,8 +165,10 @@ class ExtractTRApp:
 
     def do_extract(self):
         if self.source_file != "":
+            prefs.save_dirs(os.path.dirname(self.source_file), os.path.dirname(self.destination_file))
             ex.extract_file(self.source_file, self.destination_file)
         else:
+            prefs.save_dirs(self.source_dir, os.path.dirname(self.destination_file))
             ex.extract_dir(self.source_dir, self.destination_file)
 
         self.post_extract_ui()

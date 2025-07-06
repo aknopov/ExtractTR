@@ -13,7 +13,7 @@ BUTTON_WIDTH = 15
 LABEL_WIDTH = 70
 
 
-class ExtractTRApp:
+class ExtractTRApp: # pylint: disable=too-many-instance-attributes
     """
     A class responsible for initializing GUI components and getting  source and destination paths.
     """
@@ -93,7 +93,7 @@ class ExtractTRApp:
         base_path = ''
         try:
             # PyInstaller stores data files in a tmp folder referred to as _MEIPASS
-            base_path = sys._MEIPASS
+            base_path = sys._MEIPASS # pylint: disable=protected-access
         except AttributeError:
             pass
 

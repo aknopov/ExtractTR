@@ -1,7 +1,7 @@
 import unittest
-import extractor as ex
-from openpyxl import Workbook
 import os
+from openpyxl import Workbook
+import extractor as ex
 
 
 class TestExtractor(unittest.TestCase):

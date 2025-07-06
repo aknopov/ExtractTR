@@ -76,4 +76,3 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(cnv.may_be_convert(1.23), 1.23)
         self.assertEqual(cnv.may_be_convert("1.23"), 1.23)
         self.assertEqual(cnv.may_be_convert("2 - 4"), 3.0)
-

@@ -2,8 +2,8 @@ import math
 import os
 import re
 from tkinter import messagebox
-from openpyxl import load_workbook, worksheet
 import logging as log
+from openpyxl import load_workbook, worksheet
 import converter as cnv
 
 INPUT_SHEET = "Input"
@@ -108,8 +108,7 @@ def rename_orig(destination, first):
         if first:
             return messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
                                     "Either close other and retry or cancel")
-        else:
-            return CANCEL
+        return CANCEL
 
 
 def extract_dir(source, destination):
@@ -217,13 +216,11 @@ def sort_rows(ws: worksheet, row_start: int, row_end: int, col_start: int, col_e
         col_end     End column to be sorted (inclusive)
     """
 
-    bottom = ws.max_row
-
     col_name_start = cnv.col_idx_to_name(col_start)
     col_name_end = cnv.col_idx_to_name(col_end)
 
     org_range = col_name_start + str(row_start) + ':' + col_name_end + str(row_end)
-    shift = bottom + 1 - row_start
+    shift = ws.max_row + 1 - row_start
 
     # Move whole range to the bottom
     ws.move_range(org_range, rows = shift)
@@ -232,7 +229,7 @@ def sort_rows(ws: worksheet, row_start: int, row_end: int, col_start: int, col_e
     for i in range(row_start + shift, row_end + shift + 1):
         val = ws.cell(row=i, column=SORT_COLUMN_IDX).value or ""
         keys.append((val, i))
-    
+
     # Sorts by all fields in the tuple!
     keys.sort()
 

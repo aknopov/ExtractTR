@@ -10,21 +10,21 @@ def col_name_to_idx(s):
         s = s.strip().upper()
     if len(s) == 1:
         return ord(s) - ord('A') + 1
-    elif len(s) == 2:
+    if len(s) == 2:
         return (ord(s[0]) - ord('A') + 1) * 26 + (ord(s[1]) - ord('A') + 1)
-    else:
-        log.error("Invalid column data: %s", s)
-        return 0
+
+    log.error("Invalid column data: %s", s)
+    return 0
 
 def col_idx_to_name(i):
     if i < 27:
         return chr(ord('A') + i - 1)
-    elif i < 26**2 -  1:
+    if i < 26**2 -  1:
         c1 = chr(ord('A') + (i - 1) // 26 - 1)
         c2 = chr(ord('A') + (i - 1) % 26)
         return c1 + c2
-    else:
-        return None
+
+    return None
 
 def convert_na(value):
     # Convert None or NaN to 'N/A'
@@ -46,19 +46,19 @@ def may_be_convert(v):
 def convert_value(s):
     if is_number(s):
         return float(s)
-    elif is_range(s):
+    if is_range(s):
         return convert_range(s)
-    else:
-        log.error("Can't parse %s to number or range", s)
-        return math.nan
+
+    log.error("Can't parse %s to number or range", s)
+    return math.nan
 
 
 def is_number(s):
-    return True if s=='nan' or re.match(r"^[+-]?\d+(>?\.\d+)?$", s) is not None else False
+    return bool(s=='nan' or re.match(r"^[+-]?\d+(>?\.\d+)?$", s) is not None)
 
 
 def is_range(s):
-    return True if re.match(r'^[+-]?\d+(>?\.\d+)? *- *[+-]?\d+(>?\.\d+)?$', s) is not None else False
+    return bool(re.match(r'^[+-]?\d+(>?\.\d+)? *- *[+-]?\d+(>?\.\d+)?$', s) is not None)
 
 
 def convert_range(s):

@@ -3,7 +3,7 @@
 
 ## Installation
 - Copy package files into some directory.
-- Run script `install.cmd`. It will install Python and other dependencies - look the command window for the progress and messages.
+- Run script `install.cmd`. It will install Python and other dependencies - look at the command window for the progress and messages.
 This script needs to be run once for each computer and user.
 - Now you can run the application using either "ExtractTR" shortcut created in installation or just run the script `run.cmd` from the command line.
 

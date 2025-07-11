@@ -21,6 +21,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
         self.source_dir = ""
         self.source_file = ""
         self.destination_file = ""
+        self.prefs = prefs.Prefs()
 
         self.root = None
         self.source_f_label = None
@@ -107,21 +108,21 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
         self.root.destroy()
 
     def select_source_file(self):
-        start_dir = prefs.get_dirs()[0]
+        start_dir = self.prefs.get_dirs()[0]
         self.source_file = self.open_file_dialog(start_dir)
         self.source_f_label.configure(text=self.source_file)
         self.source_f_label.update()
         self.enable_extract()
 
     def select_source_dir(self):
-        start_dir = prefs.get_dirs()[0]
+        start_dir = self.prefs.get_dirs()[0]
         self.source_dir = self.open_dir_dialog(start_dir)
         self.source_d_label.configure(text=self.source_dir)
         self.source_d_label.update()
         self.enable_extract()
 
     def select_destination_file(self):
-        start_dir = prefs.get_dirs()[1]
+        start_dir = self.prefs.get_dirs()[1]
         self.destination_file = self.open_file_dialog(start_dir)
         self.destination_label.configure(text=self.destination_file)
         self.destination_label.update()
@@ -165,10 +166,10 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
 
     def do_extract(self):
         if self.source_file != "":
-            prefs.save_dirs(os.path.dirname(self.source_file), os.path.dirname(self.destination_file))
+            self.prefs.save_dirs(os.path.dirname(self.source_file), os.path.dirname(self.destination_file))
             ex.extract_file(self.source_file, self.destination_file)
         else:
-            prefs.save_dirs(self.source_dir, os.path.dirname(self.destination_file))
+            self.prefs.save_dirs(self.source_dir, os.path.dirname(self.destination_file))
             ex.extract_dir(self.source_dir, self.destination_file)
 
         self.post_extract_ui()

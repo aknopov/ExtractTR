@@ -89,26 +89,8 @@ def extract_file(source, destination):
 
     extract_one(source, destination, wb_out)
 
-    # Try twice
-    first_try = rename_orig(destination, True)
-    if first_try != OK and first_try != CANCEL and rename_orig(destination, False) != OK:
-        messagebox.showerror(message = f"Failed to save '{destination}'")
-        log.info("Failed to rename '%s'", destination)
-        return
-
-    wb_out.save(destination)
+    save_workbook(wb_out, destination)
     log.info("Done file extracting")
-
-
-def rename_orig(destination, first):
-    try:
-        os.rename(destination, new_file_name(destination))
-        return OK
-    except PermissionError:
-        if first:
-            return messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
-                                    "Either close other and retry or cancel")
-        return CANCEL
 
 
 def extract_dir(source, destination):
@@ -129,17 +111,36 @@ def extract_dir(source, destination):
     end_row = wb_out.active.max_row
     sort_rows(wb_out.active, start_row, end_row, 1, LAST_COLUMN_IDX)
 
-    os.rename(destination, new_file_name(destination))
-    wb_out.save(destination)
+    save_workbook(wb_out, destination)
     log.info("Done directory extracting")
 
+# Try twice
+def rename_orig(destination):
+    try:
+        os.rename(destination, new_file_name(destination))
+        return True
+    except PermissionError:
+        resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
+                                    "Either close other and retry or cancel")
+        if resp == CANCEL:
+            return False
+        try:
+            os.rename(destination, new_file_name(destination))
+            return True
+        except PermissionError:
+            return False
+
+
 def save_workbook(wb, destination):
-    os.rename(destination, new_file_name(destination))
+    if not rename_orig(destination):
+        return
+
     try:
         wb.save(destination)
     except Exception as e: # pylint: disable=broad-except
         log.error("Failed to save file '%s': %s", destination, e)
         os.rename(new_file_name(destination), destination)
+
 
 def list_excel_files(dir_path):
     excel_files = []

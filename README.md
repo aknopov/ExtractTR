@@ -1,6 +1,12 @@
 # Extractor of Soil Test Results
 (Done on commission of TTC)
 
+## Installation
+- Copy package files into some directory.
+- Run script `install.cmd`. It will install Python and other dependencies - look the command window for the progress and messages.
+This script needs to be run once for each computer and user.
+- Now you can run the application using either "ExtractTR" shortcut created in installation or just run the script `run.cmd` from the command line.
+
 ## User Notes
 - The app copies soil test information from source file(s) to the destination.
 - It merges certain cells in columns based on source samples and sorts the resulting data by the soil group in column "CG".
@@ -15,5 +21,6 @@ To view the log, copy this path into Explorer. You may be prompted to choose a p
 
 ## Developer Notes
 - The program is written in Python 3 using the `tkinter` and `openpyxl` packages.
-- To create package, install "pyinstaller" and run `cd install; pyinstaller --clean ExtractTR.spec`.
+- To pack distribution in a directory, run `install\pack <dir>`. It will copy required files into `<dir>\ExtractTR` directory
+- To create stand-alone executable, install "pyinstaller" and run `cd install; pyinstaller --clean ExtractTR.spec`.
 You might need to exclude project directory from virus protection.

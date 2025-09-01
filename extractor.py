@@ -21,26 +21,31 @@ MAPPINGS = [
     {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "L6", "out": "G", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "F8", "out": "H", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "L8", "out": "I", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "M8", "out": "J", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "N8", "out": "K", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "F21", "out": "L", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G21", "out": "L", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H21", "out": "L", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "F20", "out": "T", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G20", "out": "T", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H20", "out": "T", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "F23", "out": "U", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "G23", "out": "U", "offset": 1},
+    {"sheet": REPORT_SHEET, "in1": "H23", "out": "U", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "L10", "out": "AA", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "M10", "out": "AB", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "N10", "out": "AC", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "O10", "out": "AD", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "L11", "out": "AE", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q186", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q164", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CD"},
+    {"sheet": REPORT_SHEET, "in1": "Q185", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CD"},
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "AN", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V4", "out": "AQ", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V30", "out": "AQ", "offset": 1},
@@ -51,6 +56,9 @@ MAPPINGS = [
     {"sheet": REPORT_SHEET, "in1": "F45", "out": "AS", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G45", "out": "AS", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H45", "out": "AS", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "F46", "out": "AZ", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "G46", "out": "AZ", "offset": 1},
+    {"sheet": REPORT_SHEET, "in1": "H46", "out": "AZ", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "F39", "out": "BB", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G39", "out": "BB", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H39", "out": "BB", "offset": 2},
@@ -76,7 +84,7 @@ MAPPINGS = [
 ]
 
 MERGE_COLS = [
-    "B", "D", "F", "G", "H", "AN", "BS", "BT", "BU", "BV"
+    "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV"
 ]
 
 OK = messagebox.OK
@@ -173,13 +181,16 @@ def new_file_name(fname):
     return base + ".org" + ext
 
 
-# def print_mappings():
-#     for mapping in MAPPINGS:
-#         entry = mapping["sheet"] + " (" + mapping["in1"]
-#         if "in2" in mapping:
-#             entry += "+" + mapping["in2"]
-#         entry += ") -> " + mapping["out"]
-#         print(entry)
+def print_mappings():
+    for mapping in MAPPINGS:
+        entry = ''
+        if "if" in mapping:
+            entry += "IF '" + mapping["if"] + "' == " + mapping["is"] + ": "
+        entry += mapping["sheet"] + " (" + mapping["in1"]
+        if "in2" in mapping:
+            entry += "+" + mapping["in2"]
+        entry += ") -> " + mapping["out"]
+        print(entry)
 
 
 def copy_one_value(wb_in, wb_out, last_row, mapping):
@@ -195,11 +206,12 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
         log.warning("Couldn't extract value from sheet '%s', cell '%s'",
                      mapping["sheet"], {mapping["in1"]})
 
-    wb_out.active.cell(
-        row = last_row + mapping["offset"] + 1,
-        column = cnv.col_name_to_idx(mapping["out"]),
-        value = v_conv
-    )
+    if "if" not in mapping or get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
+        wb_out.active.cell(
+            row = last_row + mapping["offset"] + 1,
+            column = cnv.col_name_to_idx(mapping["out"]),
+            value = v_conv
+        )
 
 
 def merge_cells(wb_out, col, last_row):

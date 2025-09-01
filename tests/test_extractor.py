@@ -3,6 +3,7 @@ import os
 from unittest.mock import Mock, patch
 from openpyxl import Workbook
 import extractor as ex
+import math
 
 
 class TestExtractor(unittest.TestCase):
@@ -319,6 +320,89 @@ class TestExtractor(unittest.TestCase):
                 column=7,  # column G
                 value=25.5
             )
+
+    def test_get_cell_value_success(self):
+        """Test successful cell value extraction"""
+        wb_in = Mock()
+        mock_sheet = Mock()
+        mock_cell = Mock()
+        mock_cell.value = 42.5
+
+        # Mock the sheet access
+        mock_sheet.__getitem__ = Mock(return_value=mock_cell)
+        wb_in.__getitem__ = Mock(return_value=mock_sheet)
+
+        result = ex.get_cell_value(wb_in, "Input", "D6")
+
+        self.assertEqual(result, 42.5)
+        wb_in.__getitem__.assert_called_once_with("Input")
+        mock_sheet.__getitem__.assert_called_once_with("D6")
+
+    def test_get_cell_value_string(self):
+        """Test cell value extraction with string value"""
+        wb_in = Mock()
+        mock_sheet = Mock()
+        mock_cell = Mock()
+        mock_cell.value = "Test String"
+
+        mock_sheet.__getitem__ = Mock(return_value=mock_cell)
+        wb_in.__getitem__ = Mock(return_value=mock_sheet)
+
+        result = ex.get_cell_value(wb_in, "Report", "L6")
+
+        self.assertEqual(result, "Test String")
+
+    def test_get_cell_value_none(self):
+        """Test cell value extraction with None value"""
+        wb_in = Mock()
+        mock_sheet = Mock()
+        mock_cell = Mock()
+        mock_cell.value = None
+
+        mock_sheet.__getitem__ = Mock(return_value=mock_cell)
+        wb_in.__getitem__ = Mock(return_value=mock_sheet)
+
+        result = ex.get_cell_value(wb_in, "Input", "D8")
+
+        self.assertIsNone(result)
+
+    def test_get_cell_value_key_error(self):
+        """Test cell value extraction when sheet or cell doesn't exist"""
+        wb_in = Mock()
+
+        # Mock KeyError when accessing sheet
+        wb_in.__getitem__ = Mock(side_effect=KeyError("Sheet 'NonExistent' not found"))
+
+        with patch('extractor.log.warning') as mock_log:
+            result = ex.get_cell_value(wb_in, "NonExistent", "A1")
+
+            self.assertTrue(math.isnan(result))
+            mock_log.assert_called_once()
+
+    def test_get_cell_value_cell_key_error(self):
+        """Test cell value extraction when cell doesn't exist in sheet"""
+        wb_in = Mock()
+        mock_sheet = Mock()
+
+        # Mock KeyError when accessing cell
+        mock_sheet.__getitem__ = Mock(side_effect=KeyError("Cell 'Z999' not found"))
+        wb_in.__getitem__ = Mock(return_value=mock_sheet)
+
+        with patch('extractor.log.warning') as mock_log:
+            result = ex.get_cell_value(wb_in, "Input", "Z999")
+
+            self.assertTrue(math.isnan(result))
+            mock_log.assert_called_once()
+
+    def test_is_number(self):
+        self.assertTrue(ex.is_number(3.14159))
+        self.assertTrue(ex.is_number(42))
+
+        self.assertFalse(ex.is_number(math.nan))
+        self.assertFalse(ex.is_number(None))
+        self.assertFalse(ex.is_number("Hello"))
+        self.assertFalse(ex.is_number(True))
+        self.assertTrue(ex.is_number(float('inf')))  # Infinity is not None and not NaN
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ def col_name_to_idx(s):
     if len(s) == 2:
         return (ord(s[0]) - ord('A') + 1) * 26 + (ord(s[1]) - ord('A') + 1)
 
-    log.error("Invalid column data: %s", s)
+    log.warning("Invalid column data: %s", s)
     return 0
 
 def col_idx_to_name(i):
@@ -49,7 +49,7 @@ def convert_value(s):
     if is_range(s):
         return convert_range(s)
 
-    log.error("Can't parse %s to number or range", s)
+    log.warning("Can't parse %s to number or range", s)
     return math.nan
 
 
@@ -81,10 +81,10 @@ def convert_range(s):
                 start = -float(parts[1].strip())
                 end = -float(parts[3].strip())
             case _:
-                log.error("Invalid range format: %s", s)
+                log.warning("Invalid range format: %s", s)
 
         return (start + end) / 2.0
     except ValueError:
-        log.error("Invalid range format: %s", s)
+        log.warning("Invalid range format: %s", s)
 
     return math.nan

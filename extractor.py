@@ -42,10 +42,10 @@ MAPPINGS = [
     {"sheet": REPORT_SHEET, "in1": "L11", "out": "AE", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0, "if": "L11", "is": "CU"},
     {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0, "if": "L11", "is": "CU"},
-    {"sheet": REPORT_SHEET, "in1": "Q186", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CU"},
     {"sheet": REPORT_SHEET, "in1": "Q164", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CD"},
-    {"sheet": REPORT_SHEET, "in1": "Q185", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q186", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CU"},
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CD"},
+    {"sheet": REPORT_SHEET, "in1": "Q185", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CU"},
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "AN", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V4", "out": "AQ", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V30", "out": "AQ", "offset": 1},
@@ -91,7 +91,7 @@ OK = messagebox.OK
 CANCEL = messagebox.CANCEL
 
 def extract_file(source, destination):
-    log.info("Extracting data from `%s` to `%s` ...", source, destination)
+    log.info("Extracting data from file `%s` to `%s` ...", source, destination)
     wb_out = load_workbook(destination)
     wb_out.active = wb_out[OUTPUT_SHEET]
 
@@ -102,7 +102,7 @@ def extract_file(source, destination):
 
 
 def extract_dir(source, destination):
-    log.info("Extracting data from '%s' to '%s' ...", source, destination)
+    log.info("Extracting data from directory '%s' to '%s' ...", source, destination)
     wb_out = load_workbook(destination)
     wb_out.active = wb_out[OUTPUT_SHEET]
     start_row = wb_out.active.max_row + 1
@@ -167,10 +167,7 @@ def extract_one(source, destination, wb_out):
     log.info("Extracting data from '%s' to '%s' from row %d ...", source, destination, last_row)
 
     for mapping in MAPPINGS:
-        try:
-            copy_one_value(wb_in, wb_out, last_row, mapping)
-        except Exception as e: # pylint: disable=broad-except
-            log.error("Failed to extract data from '%s': %s", source, e)
+        copy_one_value(wb_in, wb_out, last_row, mapping)
 
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
@@ -188,23 +185,37 @@ def print_mappings():
             entry += "IF '" + mapping["if"] + "' == " + mapping["is"] + ": "
         entry += mapping["sheet"] + " (" + mapping["in1"]
         if "in2" in mapping:
-            entry += "+" + mapping["in2"]
-        entry += ") -> " + mapping["out"]
+            entry += "+" + mapping["in2"] + ")/2 -> " + mapping["out"]
+        else:
+            entry += ") -> " + mapping["out"]
         print(entry)
 
 
+def get_cell_value(wb_in, sheet, cell):
+    try:
+        v = wb_in[sheet][cell].value
+        if v is None:
+            log.warning("No value in sheet '%s', cell '%s'", sheet, cell)
+    except KeyError as e:
+        log.warning("Failed to extract value from sheet '%s', cell '%s': %s", sheet, cell, e)
+        v = math.nan
+    return v
+
+
+def is_number(val):
+    kind = type(val)
+    return kind == int or kind == float and not math.isnan(val)
+
+
 def copy_one_value(wb_in, wb_out, last_row, mapping):
-    v = cnv.may_be_convert(wb_in[mapping["sheet"]][mapping["in1"]].value)
+    v = cnv.may_be_convert(get_cell_value(wb_in, mapping["sheet"], mapping["in1"]))
 
     if "in2" in mapping:
-        v2 = cnv.may_be_convert(wb_in[mapping["sheet"]][mapping["in2"]].value)
-        if not math.isnan(v) and not math.isnan(v2):
+        v2 = cnv.may_be_convert(get_cell_value(wb_in, mapping["sheet"], mapping["in2"]))
+        if is_number(v) and is_number(v2):
             v = (v + v2) / 2.0
 
     v_conv = cnv.convert_na(v)
-    if v_conv == cnv.N_A:
-        log.warning("Couldn't extract value from sheet '%s', cell '%s'",
-                     mapping["sheet"], {mapping["in1"]})
 
     if "if" not in mapping or get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
         wb_out.active.cell(

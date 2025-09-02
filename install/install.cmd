@@ -12,6 +12,6 @@ CALL venv\Scripts\activate
 pip install -r requirements.txt
 CALL venv\Scripts\deactivate
 
-powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('.\ExtractTR.lnk');$s.TargetPath='%~dp0\run.cmd';$s.WorkingDirectory='%~dp0';$s.IconLocation='%~dp0\res\extract.ico';$s.WindowStyle=7;$s.Save()"
+powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('.\ExtractTR.lnk');$s.TargetPath='%~dp0\run.cmd';$s.WorkingDirectory='%~dp0';$s.IconLocation='%~dp0\res\extract.ico';$s.Description='ExtractTR';$s.WindowStyle=7;$s.Save()"
 
 pause

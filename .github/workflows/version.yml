@@ -1,0 +1,32 @@
+name: Update Tag on Merge to Main
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  update_tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for tag creation
+
+      - name: Read version from file
+        id: get_version
+        run: |
+          VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' version.py)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create or update Git tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.get_version.outputs.version }}" -m "Release version ${{ steps.get_version.outputs.version }}"
+          git push origin "v${{ steps.get_version.outputs.version }}"

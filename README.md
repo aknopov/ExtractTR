@@ -24,3 +24,4 @@ To view the log, copy this path into Explorer. You may be prompted to choose a p
 - To pack distribution in a directory, run `install\pack <dir>`. It will copy required files into `<dir>\ExtractTR` directory
 - To create stand-alone executable, install "pyinstaller" and run `cd install; pyinstaller --clean ExtractTR.spec`.
 You might need to exclude project directory from virus protection.
+- You are responsible for maintaining application tag in `version.py` file. "main" branch is tagged automatically by its value on a merge.

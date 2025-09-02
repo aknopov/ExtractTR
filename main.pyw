@@ -7,6 +7,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import extractor as ex
 import prefs
+import version
 
 
 BUTTON_WIDTH = 15
@@ -33,7 +34,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
         self.configure_logging()
 
         self.root = tk.Tk()
-        self.root.title("Soil Test Data Extractor")
+        self.root.title(f"Soil Test Data Extractor v{version.__version__}")
         self.root.geometry("500x260")
         self.root.resizable(False, False)
         self.root.iconbitmap(self.get_resource_path('res/extract.ico'))

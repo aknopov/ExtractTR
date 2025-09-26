@@ -42,10 +42,8 @@ MAPPINGS = [
     {"sheet": REPORT_SHEET, "in1": "L11", "out": "AE", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0, "if": "L11", "is": "CU"},
     {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0, "if": "L11", "is": "CU"},
-    {"sheet": REPORT_SHEET, "in1": "Q164", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CD"},
-    {"sheet": REPORT_SHEET, "in1": "Q186", "in2": "Q195", "out": "AI", "offset": 0, "if": "L11", "is": "CU"},
-    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CD"},
-    {"sheet": REPORT_SHEET, "in1": "Q185", "in2": "Q194", "out": "AJ", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q164", "in2": "Q195", "out": "AI", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "AN", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V4", "out": "AQ", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V30", "out": "AQ", "offset": 1},
@@ -217,7 +215,7 @@ def copy_one_value(wb_in, wb_out, last_row, mapping):
 
     v_conv = cnv.convert_na(v)
 
-    if "if" not in mapping or get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
+    if "if" not in mapping or v_conv == cnv.N_A or get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
         wb_out.active.cell(
             row = last_row + mapping["offset"] + 1,
             column = cnv.col_name_to_idx(mapping["out"]),

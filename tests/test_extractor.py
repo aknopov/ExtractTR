@@ -2,6 +2,7 @@ import unittest
 import os
 from unittest.mock import Mock, patch
 from openpyxl import Workbook
+import converter as cnv
 import extractor as ex
 import math
 
@@ -200,6 +201,48 @@ class TestExtractor(unittest.TestCase):
 
             # Verify no cell was written when condition is not met
             mock_output_sheet.cell.assert_not_called()
+
+    def test_copy_one_value_conditional_no_input(self):
+        """Test value copying when conditional logic is false"""
+        wb_in = Mock()
+        wb_out = Mock()
+
+        # Mock the input sheet and cells
+        mock_sheet = Mock()
+        mock_cell1 = Mock()
+        mock_cell1.value = None
+        mock_condition_cell = Mock()
+        mock_condition_cell.value = "CU"  # This matches the condition
+        mock_sheet.__getitem__ = Mock(side_effect=lambda x: mock_cell1 if x == "D6" else mock_condition_cell)
+        wb_in.__getitem__ = Mock(return_value=mock_sheet)
+
+        # Mock the output sheet
+        mock_output_sheet = Mock()
+        wb_out.active = mock_output_sheet
+
+        # Test mapping with conditional
+        mapping = {
+            "sheet": "Input",
+            "in1": "D6",
+            "out": "D",
+            "offset": 0,
+            "if": "L11",
+            "is": "CU"
+        }
+
+        # Mock converter functions
+        with patch('extractor.cnv.may_be_convert', return_value=None), \
+             patch('extractor.cnv.convert_na', return_value=cnv.N_A), \
+             patch('extractor.cnv.col_name_to_idx', return_value=4):
+
+            ex.copy_one_value(wb_in, wb_out, 10, mapping)
+
+            # Verify the cell was written when condition is met
+            mock_output_sheet.cell.assert_called_once_with(
+                row=11,
+                column=4,
+                value=cnv.N_A
+            )
 
     def test_copy_one_value_with_nan_in2(self):
         """Test value copying when in2 contains NaN"""

@@ -3,7 +3,7 @@ import os
 from unittest.mock import Mock, patch
 from openpyxl import Workbook
 import converter as cnv
-import extractor as ex
+import xcl_extractor as ecl
 import math
 
 
@@ -35,12 +35,12 @@ class TestExtractor(unittest.TestCase):
             os.remove(self.destination_file + ".new")
 
     def test_print_mappings(self):
-        ex.print_mappings()
+        ecl.print_mappings()
 
     def test_new_file_name(self):
-        self.assertEqual(ex.new_file_name("file.ext"), "file.org.ext")
-        self.assertEqual(ex.new_file_name("/path/file.ext"), "/path/file.org.ext")
-        self.assertEqual(ex.new_file_name("file"), "file.org")
+        self.assertEqual(ecl.new_file_name("file.ext"), "file.org.ext")
+        self.assertEqual(ecl.new_file_name("/path/file.ext"), "/path/file.org.ext")
+        self.assertEqual(ecl.new_file_name("file"), "file.org")
 
     def test_copy_one_value_basic(self):
         """Test basic value copying without additional parameters"""
@@ -68,11 +68,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', return_value=42.5), \
-             patch('extractor.cnv.convert_na', return_value=42.5), \
-             patch('extractor.cnv.col_name_to_idx', return_value=2):
+        with patch('xcl_extractor.cnv.may_be_convert', return_value=42.5), \
+             patch('xcl_extractor.cnv.convert_na', return_value=42.5), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
 
-            ex.copy_one_value(wb_in, wb_out, 10, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 10, mapping)
 
             # Verify the cell was written to the correct location
             mock_output_sheet.cell.assert_called_once_with(
@@ -109,11 +109,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', side_effect=[10.0, 20.0]), \
-             patch('extractor.cnv.convert_na', return_value=15.0), \
-             patch('extractor.cnv.col_name_to_idx', return_value=3):
+        with patch('xcl_extractor.cnv.may_be_convert', side_effect=[10.0, 20.0]), \
+             patch('xcl_extractor.cnv.convert_na', return_value=15.0), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=3):
 
-            ex.copy_one_value(wb_in, wb_out, 5, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 5, mapping)
 
             # Verify the average value was written
             mock_output_sheet.cell.assert_called_once_with(
@@ -151,11 +151,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', return_value=100.0), \
-             patch('extractor.cnv.convert_na', return_value=100.0), \
-             patch('extractor.cnv.col_name_to_idx', return_value=4):
+        with patch('xcl_extractor.cnv.may_be_convert', return_value=100.0), \
+             patch('xcl_extractor.cnv.convert_na', return_value=100.0), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=4):
 
-            ex.copy_one_value(wb_in, wb_out, 8, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 8, mapping)
 
             # Verify the cell was written when condition is met
             mock_output_sheet.cell.assert_called_once_with(
@@ -193,11 +193,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', return_value=100.0), \
-             patch('extractor.cnv.convert_na', return_value=100.0), \
-             patch('extractor.cnv.col_name_to_idx', return_value=4):
+        with patch('xcl_extractor.cnv.may_be_convert', return_value=100.0), \
+             patch('xcl_extractor.cnv.convert_na', return_value=100.0), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=4):
 
-            ex.copy_one_value(wb_in, wb_out, 10, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 10, mapping)
 
             # Verify no cell was written when condition is not met
             mock_output_sheet.cell.assert_not_called()
@@ -231,11 +231,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', return_value=None), \
-             patch('extractor.cnv.convert_na', return_value=cnv.N_A), \
-             patch('extractor.cnv.col_name_to_idx', return_value=4):
+        with patch('xcl_extractor.cnv.may_be_convert', return_value=None), \
+             patch('xcl_extractor.cnv.convert_na', return_value=cnv.N_A), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=4):
 
-            ex.copy_one_value(wb_in, wb_out, 10, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 10, mapping)
 
             # Verify the cell was written when condition is met
             mock_output_sheet.cell.assert_called_once_with(
@@ -272,11 +272,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', side_effect=[15.0, float('nan')]), \
-             patch('extractor.cnv.convert_na', return_value=15.0), \
-             patch('extractor.cnv.col_name_to_idx', return_value=5):
+        with patch('xcl_extractor.cnv.may_be_convert', side_effect=[15.0, float('nan')]), \
+             patch('xcl_extractor.cnv.convert_na', return_value=15.0), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=5):
 
-            ex.copy_one_value(wb_in, wb_out, 12, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 12, mapping)
 
             # Verify only the first value was used (no averaging due to NaN)
             mock_output_sheet.cell.assert_called_once_with(
@@ -313,11 +313,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', side_effect=[float('nan'), float('nan')]), \
-             patch('extractor.cnv.convert_na', return_value="N/A"), \
-             patch('extractor.cnv.col_name_to_idx', return_value=6):
+        with patch('xcl_extractor.cnv.may_be_convert', side_effect=[float('nan'), float('nan')]), \
+             patch('xcl_extractor.cnv.convert_na', return_value="N/A"), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=6):
 
-            ex.copy_one_value(wb_in, wb_out, 15, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 15, mapping)
 
             # Verify the N/A value was written
             mock_output_sheet.cell.assert_called_once_with(
@@ -351,11 +351,11 @@ class TestExtractor(unittest.TestCase):
         }
 
         # Mock converter functions
-        with patch('extractor.cnv.may_be_convert', return_value=25.5), \
-             patch('extractor.cnv.convert_na', return_value=25.5), \
-             patch('extractor.cnv.col_name_to_idx', return_value=7):
+        with patch('xcl_extractor.cnv.may_be_convert', return_value=25.5), \
+             patch('xcl_extractor.cnv.convert_na', return_value=25.5), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=7):
 
-            ex.copy_one_value(wb_in, wb_out, 20, mapping)
+            ecl.copy_one_value(wb_in, wb_out, 20, mapping)
 
             # Verify the converted value was written
             mock_output_sheet.cell.assert_called_once_with(
@@ -375,7 +375,7 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(return_value=mock_cell)
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        result = ex.get_cell_value(wb_in, "Input", "D6")
+        result = ecl.get_cell_value(wb_in, "Input", "D6")
 
         self.assertEqual(result, 42.5)
         wb_in.__getitem__.assert_called_once_with("Input")
@@ -391,7 +391,7 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(return_value=mock_cell)
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        result = ex.get_cell_value(wb_in, "Report", "L6")
+        result = ecl.get_cell_value(wb_in, "Report", "L6")
 
         self.assertEqual(result, "Test String")
 
@@ -405,7 +405,7 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(return_value=mock_cell)
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        result = ex.get_cell_value(wb_in, "Input", "D8")
+        result = ecl.get_cell_value(wb_in, "Input", "D8")
 
         self.assertIsNone(result)
 
@@ -416,8 +416,8 @@ class TestExtractor(unittest.TestCase):
         # Mock KeyError when accessing sheet
         wb_in.__getitem__ = Mock(side_effect=KeyError("Sheet 'NonExistent' not found"))
 
-        with patch('extractor.log.warning') as mock_log:
-            result = ex.get_cell_value(wb_in, "NonExistent", "A1")
+        with patch('xcl_extractor.log.warning') as mock_log:
+            result = ecl.get_cell_value(wb_in, "NonExistent", "A1")
 
             self.assertTrue(math.isnan(result))
             mock_log.assert_called_once()
@@ -431,21 +431,21 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(side_effect=KeyError("Cell 'Z999' not found"))
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        with patch('extractor.log.warning') as mock_log:
-            result = ex.get_cell_value(wb_in, "Input", "Z999")
+        with patch('xcl_extractor.log.warning') as mock_log:
+            result = ecl.get_cell_value(wb_in, "Input", "Z999")
 
             self.assertTrue(math.isnan(result))
             mock_log.assert_called_once()
 
     def test_is_number(self):
-        self.assertTrue(ex.is_number(3.14159))
-        self.assertTrue(ex.is_number(42))
+        self.assertTrue(ecl.is_number(3.14159))
+        self.assertTrue(ecl.is_number(42))
 
-        self.assertFalse(ex.is_number(math.nan))
-        self.assertFalse(ex.is_number(None))
-        self.assertFalse(ex.is_number("Hello"))
-        self.assertFalse(ex.is_number(True))
-        self.assertTrue(ex.is_number(float('inf')))  # Infinity is not None and not NaN
+        self.assertFalse(ecl.is_number(math.nan))
+        self.assertFalse(ecl.is_number(None))
+        self.assertFalse(ecl.is_number("Hello"))
+        self.assertFalse(ecl.is_number(True))
+        self.assertTrue(ecl.is_number(float('inf')))  # Infinity is not None and not NaN
 
 
 if __name__ == "__main__":

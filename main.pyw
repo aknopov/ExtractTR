@@ -5,7 +5,7 @@ from tkinter import filedialog, messagebox
 import logging as log
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-import extractor as ex
+import xcl_extractor as xcl
 import prefs
 import version
 
@@ -168,10 +168,10 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
     def do_extract(self):
         if self.source_file != "":
             self.prefs.save_dirs(os.path.dirname(self.source_file), os.path.dirname(self.destination_file))
-            ex.extract_file(self.source_file, self.destination_file)
+            xcl.extract_file(self.source_file, self.destination_file)
         else:
             self.prefs.save_dirs(self.source_dir, os.path.dirname(self.destination_file))
-            ex.extract_dir(self.source_dir, self.destination_file)
+            xcl.extract_dir(self.source_dir, self.destination_file)
 
         self.post_extract_ui()
 

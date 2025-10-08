@@ -1,6 +1,10 @@
+altgraph==0.17.4
 et_xmlfile==2.0.0
 openpyxl==3.1.5
-python-dateutil==2.9.0.post0
-pytz==2025.2
-six==1.17.0
-tzdata==2025.2
+packaging==25.0
+pefile==2023.2.7
+pyinstaller==6.15.0
+pyinstaller-hooks-contrib==2025.8
+PyMuPDF==1.26.4
+pywin32-ctypes==0.2.3
+setuptools==80.9.0

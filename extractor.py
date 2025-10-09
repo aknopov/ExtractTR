@@ -21,26 +21,29 @@ MAPPINGS = [
     {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "D9", "out": "G", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "I6", "out": "H", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "L6", "out": "G", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "F8", "out": "H", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "L8", "out": "I", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "M8", "out": "J", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "N8", "out": "K", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "F21", "out": "L", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G21", "out": "L", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H21", "out": "L", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "F20", "out": "T", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G20", "out": "T", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H20", "out": "T", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "F23", "out": "U", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "G23", "out": "U", "offset": 1},
+    {"sheet": REPORT_SHEET, "in1": "H23", "out": "U", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "L10", "out": "AA", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "M10", "out": "AB", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "N10", "out": "AC", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "O10", "out": "AD", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "L11", "out": "AE", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "Q171", "out": "AG", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q170", "out": "AH", "offset": 0, "if": "L11", "is": "CU"},
+    {"sheet": REPORT_SHEET, "in1": "Q164", "in2": "Q195", "out": "AI", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "Q163", "in2": "Q194", "out": "AJ", "offset": 2},
-    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 0},
-    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 1},
-    {"sheet": REPORT_SHEET, "in1": "O164", "in2": "O195", "out": "AI", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "AN", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V4", "out": "AQ", "offset": 0},
     {"sheet": DILATION_SHEET, "in1": "V30", "out": "AQ", "offset": 1},
@@ -51,6 +54,9 @@ MAPPINGS = [
     {"sheet": REPORT_SHEET, "in1": "F45", "out": "AS", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G45", "out": "AS", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H45", "out": "AS", "offset": 2},
+    {"sheet": REPORT_SHEET, "in1": "F46", "out": "AZ", "offset": 0},
+    {"sheet": REPORT_SHEET, "in1": "G46", "out": "AZ", "offset": 1},
+    {"sheet": REPORT_SHEET, "in1": "H46", "out": "AZ", "offset": 2},
     {"sheet": REPORT_SHEET, "in1": "F39", "out": "BB", "offset": 0},
     {"sheet": REPORT_SHEET, "in1": "G39", "out": "BB", "offset": 1},
     {"sheet": REPORT_SHEET, "in1": "H39", "out": "BB", "offset": 2},
@@ -76,43 +82,25 @@ MAPPINGS = [
 ]
 
 MERGE_COLS = [
-    "B", "D", "F", "G", "H", "AN", "BS", "BT", "BU", "BV"
+    "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV"
 ]
 
 OK = messagebox.OK
 CANCEL = messagebox.CANCEL
 
 def extract_file(source, destination):
-    log.info("Extracting data from `%s` to `%s` ...", source, destination)
+    log.info("Extracting data from file `%s` to `%s` ...", source, destination)
     wb_out = load_workbook(destination)
     wb_out.active = wb_out[OUTPUT_SHEET]
 
     extract_one(source, destination, wb_out)
 
-    # Try twice
-    first_try = rename_orig(destination, True)
-    if first_try != OK and first_try != CANCEL and rename_orig(destination, False) != OK:
-        messagebox.showerror(message = f"Failed to save '{destination}'")
-        log.info("Failed to rename '%s'", destination)
-        return
-
-    wb_out.save(destination)
+    save_workbook(wb_out, destination)
     log.info("Done file extracting")
 
 
-def rename_orig(destination, first):
-    try:
-        os.rename(destination, new_file_name(destination))
-        return OK
-    except PermissionError:
-        if first:
-            return messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
-                                    "Either close other and retry or cancel")
-        return CANCEL
-
-
 def extract_dir(source, destination):
-    log.info("Extracting data from '%s' to '%s' ...", source, destination)
+    log.info("Extracting data from directory '%s' to '%s' ...", source, destination)
     wb_out = load_workbook(destination)
     wb_out.active = wb_out[OUTPUT_SHEET]
     start_row = wb_out.active.max_row + 1
@@ -129,17 +117,36 @@ def extract_dir(source, destination):
     end_row = wb_out.active.max_row
     sort_rows(wb_out.active, start_row, end_row, 1, LAST_COLUMN_IDX)
 
-    os.rename(destination, new_file_name(destination))
-    wb_out.save(destination)
+    save_workbook(wb_out, destination)
     log.info("Done directory extracting")
 
+# Try twice
+def rename_orig(destination):
+    try:
+        os.rename(destination, new_file_name(destination))
+        return True
+    except PermissionError:
+        resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
+                                    "Either close other and retry or cancel")
+        if resp == CANCEL:
+            return False
+        try:
+            os.rename(destination, new_file_name(destination))
+            return True
+        except PermissionError:
+            return False
+
+
 def save_workbook(wb, destination):
-    os.rename(destination, new_file_name(destination))
+    if not rename_orig(destination):
+        return
+
     try:
         wb.save(destination)
     except Exception as e: # pylint: disable=broad-except
         log.error("Failed to save file '%s': %s", destination, e)
         os.rename(new_file_name(destination), destination)
+
 
 def list_excel_files(dir_path):
     excel_files = []
@@ -158,10 +165,7 @@ def extract_one(source, destination, wb_out):
     log.info("Extracting data from '%s' to '%s' from row %d ...", source, destination, last_row)
 
     for mapping in MAPPINGS:
-        try:
-            copy_one_value(wb_in, wb_out, last_row, mapping)
-        except Exception as e: # pylint: disable=broad-except
-            log.error("Failed to extract data from '%s': %s", source, e)
+        copy_one_value(wb_in, wb_out, last_row, mapping)
 
     for col in MERGE_COLS:
         merge_cells(wb_out, col, last_row)
@@ -172,33 +176,51 @@ def new_file_name(fname):
     return base + ".org" + ext
 
 
-# def print_mappings():
-#     for mapping in MAPPINGS:
-#         entry = mapping["sheet"] + " (" + mapping["in1"]
-#         if "in2" in mapping:
-#             entry += "+" + mapping["in2"]
-#         entry += ") -> " + mapping["out"]
-#         print(entry)
+def print_mappings():
+    for mapping in MAPPINGS:
+        entry = ''
+        if "if" in mapping:
+            entry += "IF '" + mapping["if"] + "' == " + mapping["is"] + ": "
+        entry += mapping["sheet"] + " (" + mapping["in1"]
+        if "in2" in mapping:
+            entry += "+" + mapping["in2"] + ")/2 -> " + mapping["out"]
+        else:
+            entry += ") -> " + mapping["out"]
+        print(entry)
+
+
+def get_cell_value(wb_in, sheet, cell):
+    try:
+        v = wb_in[sheet][cell].value
+        if v is None:
+            log.warning("No value in sheet '%s', cell '%s'", sheet, cell)
+    except KeyError as e:
+        log.warning("Failed to extract value from sheet '%s', cell '%s': %s", sheet, cell, e)
+        v = math.nan
+    return v
+
+
+def is_number(val):
+    kind = type(val)
+    return kind == int or kind == float and not math.isnan(val)
 
 
 def copy_one_value(wb_in, wb_out, last_row, mapping):
-    v = cnv.may_be_convert(wb_in[mapping["sheet"]][mapping["in1"]].value)
+    v = cnv.may_be_convert(get_cell_value(wb_in, mapping["sheet"], mapping["in1"]))
 
     if "in2" in mapping:
-        v2 = cnv.may_be_convert(wb_in[mapping["sheet"]][mapping["in2"]].value)
-        if not math.isnan(v) and not math.isnan(v2):
+        v2 = cnv.may_be_convert(get_cell_value(wb_in, mapping["sheet"], mapping["in2"]))
+        if is_number(v) and is_number(v2):
             v = (v + v2) / 2.0
 
     v_conv = cnv.convert_na(v)
-    if v_conv == cnv.N_A:
-        log.warning("Couldn't extract value from sheet '%s', cell '%s'",
-                     mapping["sheet"], {mapping["in1"]})
 
-    wb_out.active.cell(
-        row = last_row + mapping["offset"] + 1,
-        column = cnv.col_name_to_idx(mapping["out"]),
-        value = v_conv
-    )
+    if "if" not in mapping or v_conv == cnv.N_A or get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
+        wb_out.active.cell(
+            row = last_row + mapping["offset"] + 1,
+            column = cnv.col_name_to_idx(mapping["out"]),
+            value = v_conv
+        )
 
 
 def merge_cells(wb_out, col, last_row):

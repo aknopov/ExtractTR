@@ -1,26 +1,28 @@
 import configparser
 import os
 
-prefs_path = os.path.join(os.path.expanduser("~"), '.extractrc')
-config = configparser.ConfigParser()
-dirs = ()
 
-def get_dirs():
-    global dirs
-    if dirs == tuple():
-        config.read(prefs_path)
-        unnamed = config[config.default_section]
-        src_dir = unnamed.get('source', '.')
-        dest_dir = unnamed.get('destination', '.')
-        dirs = (src_dir, dest_dir)
-    return dirs
+class Prefs:
+    def __init__(self):
+        self.os = os
+        self.config = configparser.ConfigParser()
+        self.prefs_path = os.path.join(os.path.expanduser("~"), '.extractrc')
+        self.dirs = ()
 
-def save_dirs(src_dir, dest_dir):
-    global dirs
-    dirs = (src_dir, dest_dir)
-    config[config.default_section] = {
-        'source': src_dir,
-        'destination': dest_dir
-    }
-    with open(file=prefs_path, mode='w', encoding='UTF-8') as configfile:
-        config.write(configfile)
+    def get_dirs(self):
+        if self.dirs == tuple():
+            self.config.read(self.prefs_path)
+            unnamed = self.config[self.config.default_section]
+            src_dir = unnamed.get('source', '.')
+            dest_dir = unnamed.get('destination', '.')
+            self.dirs = (src_dir, dest_dir)
+        return self.dirs
+
+    def save_dirs(self, src_dir, dest_dir):
+        self.dirs = (src_dir, dest_dir)
+        self.config[self.config.default_section] = {
+            'source': src_dir,
+            'destination': dest_dir
+        }
+        with open(file=self.prefs_path, mode='w', encoding='UTF-8') as configfile:
+            self.config.write(configfile)

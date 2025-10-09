@@ -3,7 +3,8 @@ import os
 import re
 from tkinter import messagebox
 import logging as log
-from openpyxl import load_workbook, Workbook, worksheet
+from typing import Any
+from openpyxl import load_workbook, Workbook
 import converter as cnv
 
 INPUT_SHEET = "Input"
@@ -85,171 +86,103 @@ MERGE_COLS = [
     "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV"
 ]
 
-def extract_file(source: str, destination: str):
-    log.info("Extracting data from file `%s` to `%s` ...", source, destination)
-    wb_out = load_workbook(destination)
-    wb_out.active = wb_out[OUTPUT_SHEET]
+class ExcelWorkbook:
+    """
+    This is a wrapper for 'openpyxl' workbook
+    """
+    def __init__(self, pyxl: Workbook):
+        self.pyxl = pyxl
 
-    extract_one(source, destination, wb_out)
+
+    def __getattr__(self, name):
+        return getattr(self.pyxl, name)
+
+
+def extract_file(source: str, destination: str):
+    """Extracts data from one excel file into another in according to mapping rules."""
+    log.info("Extracting data from file `%s` to `%s` ...", source, destination)
+    wb_out = open_workbook(destination)
+
+    _extract_one(source, wb_out)
 
     save_workbook(wb_out, destination)
     log.info("Done file extracting")
 
 
 def extract_dir(source: str, destination: str):
+    """Extracts data from all excel files in source directory to destination file in according to mapping rules."""
     log.info("Extracting data from directory '%s' to '%s' ...", source, destination)
-    wb_out = load_workbook(destination)
-    wb_out.active = wb_out[OUTPUT_SHEET]
+    wb_out = open_workbook(destination)
     start_row = max_row(wb_out) + 1
 
     # Get list of *.xlsx files
-    excel_files = list_excel_files(source)
+    excel_files = _list_excel_files(source)
     if len(excel_files) == 0:
         log.warning("No Excel files found in '%s'", source)
         return
 
     for fn in excel_files:
-        extract_one(fn, destination, wb_out)
+        _extract_one(fn, wb_out)
 
     end_row = max_row(wb_out)
-    sort_rows(wb_out.active, start_row, end_row)
+    sort_rows(wb_out, start_row, end_row)
 
     save_workbook(wb_out, destination)
     log.info("Done directory extracting")
 
 
-def open_workbook(filename: str) -> Workbook:
-    return load_workbook(filename)
+def open_workbook(filename: str) -> ExcelWorkbook:
+    """Opens output Excel file."""
+    wb = load_workbook(filename)
+    wb.active = wb[OUTPUT_SHEET]
+    return ExcelWorkbook(wb)
 
 
-def max_row(wb: Workbook) -> int:
+def max_row(wb: ExcelWorkbook) -> int:
     """Returns index of the last workbook row"""
-    return wb.active.max_row
+    return wb.pyxl.active.max_row
 
 
-def insert_one_value(val: any, wb_out: Workbook, row: int, column: str):
-    wb_out.active.cell(
-        row = row + 1,
+def insert_one_value(val: Any, wb: ExcelWorkbook, row: int, column: str):
+    """Inserts a value into Excel workbook in specified cell
+
+        Args:
+            val - value
+            wb_out - Excel wrapper
+            row - row at which to insert
+            column - column identifier, like 'B'
+    """
+    wb.pyxl.active.cell(
+        row = row,
         column = cnv.col_name_to_idx(column),
         value = cnv.convert_na(val)
     )
 
 
-# Try twice
-def rename_orig(destination):
-    try:
-        os.rename(destination, new_file_name(destination))
-        return True
-    except PermissionError:
-        resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
-                                    "Either close other and retry or cancel")
-        if resp == messagebox.CANCEL:
-            return False
-        try:
-            os.rename(destination, new_file_name(destination))
-            return True
-        except PermissionError:
-            return False
-
-
-def save_workbook(wb, destination):
-    if not rename_orig(destination):
+def save_workbook(wb: ExcelWorkbook, destination: str):
+    """Saves workbook into a file specified as a path."""
+    if not _rename_orig(destination):
         return
 
     try:
-        wb.save(destination)
+        wb.pyxl.save(destination)
     except Exception as e: # pylint: disable=broad-except
         log.error("Failed to save file '%s': %s", destination, e)
-        os.rename(new_file_name(destination), destination)
-
-
-def list_excel_files(dir_path):
-    excel_files = []
-    for fn in os.listdir(dir_path):
-        full_path = os.path.join(dir_path, fn)
-        if re.match(r'.+\.xls[bmx]?$', fn) and os.path.isfile(full_path):
-            excel_files.append(full_path)
-
-    return excel_files
-
-
-def extract_one(source, destination, wb_out):
-    wb_in = load_workbook(source, data_only=True)
-
-    last_row = max_row(wb_out)
-    log.info("Extracting data from '%s' to '%s' from row %d ...", source, destination, last_row)
-
-    for mapping in MAPPINGS:
-        copy_one_value(wb_in, wb_out, last_row, mapping)
-
-    for col in MERGE_COLS:
-        merge_cells(wb_out, col, last_row)
-
-
-def new_file_name(fname):
-    base, ext = os.path.splitext(fname)
-    return base + ".org" + ext
-
-
-def print_mappings():
-    for mapping in MAPPINGS:
-        entry = ''
-        if "if" in mapping:
-            entry += "IF '" + mapping["if"] + "' == " + mapping["is"] + ": "
-        entry += mapping["sheet"] + " (" + mapping["in1"]
-        if "in2" in mapping:
-            entry += "+" + mapping["in2"] + ")/2 -> " + mapping["out"]
-        else:
-            entry += ") -> " + mapping["out"]
-        print(entry)
-
-
-def get_cell_value(wb_in, sheet, cell):
-    try:
-        v = wb_in[sheet][cell].value
-        if v is None:
-            log.warning("No value in sheet '%s', cell '%s'", sheet, cell)
-    except KeyError as e:
-        log.warning("Failed to extract value from sheet '%s', cell '%s': %s", sheet, cell, e)
-        v = math.nan
-    return v
-
-
-def is_number(val):
-    kind = type(val)
-    return kind == int or kind == float and not math.isnan(val)
-
-
-def copy_one_value(wb_in, wb_out, last_row, mapping):
-    v = cnv.may_be_convert(get_cell_value(wb_in, mapping["sheet"], mapping["in1"]))
-
-    if "in2" in mapping:
-        v2 = cnv.may_be_convert(get_cell_value(wb_in, mapping["sheet"], mapping["in2"]))
-        if is_number(v) and is_number(v2):
-            v = (v + v2) / 2.0
-
-    v_conv = cnv.convert_na(v)
-
-    if "if" not in mapping or v_conv == cnv.N_A or get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
-        wb_out.active.cell(
-            row = last_row + mapping["offset"] + 1,
-            column = cnv.col_name_to_idx(mapping["out"]),
-            value = v_conv
-        )
-
-
-def merge_cells(wb_out, col, last_row):
-    col_idx = cnv.col_name_to_idx(col)
-    wb_out.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=col_idx, end_column=col_idx)
+        os.rename(_new_file_name(destination), destination)
 
 
 # Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
 # Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
-def sort_rows(ws: worksheet, row_start: int, row_end: int):
+def sort_rows(wb: ExcelWorkbook, row_start: int, row_end: int):
     """ Sorts range in the sheet
-        row_start   First row to be sorted
-        row_end     Last row to be sorted (inclusive)
+
+        Args:
+            row_start   First row to be sorted
+            row_end     Last row to be sorted (inclusive)
     """
+    log.info("Sorting rows %s - %s in the output spreadsheet", row_start, row_end)
+
+    ws = wb.pyxl.active
 
     col_name_start = cnv.col_idx_to_name(1)
     col_name_end = cnv.col_idx_to_name(LAST_COLUMN_IDX)
@@ -274,3 +207,101 @@ def sort_rows(ws: worksheet, row_start: int, row_end: int):
         row_range = col_name_start + str(key[1]) + ':' + col_name_end + str(key[1])
         ws.move_range(row_range, rows = to_row - key[1])
         to_row += 1
+
+
+def merge_cells(wb_out: ExcelWorkbook, col: str, last_row: int):
+    """Merges three rows in Excel spreadsheet from row 'last_row" exclusively."""
+    col_idx = cnv.col_name_to_idx(col)
+    wb_out.pyxl.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=col_idx, end_column=col_idx)
+
+
+# Tries twice
+def _rename_orig(destination):
+    try:
+        os.rename(destination, _new_file_name(destination))
+        return True
+    except PermissionError:
+        resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
+                                    "Either close other and retry or cancel")
+        if resp == messagebox.CANCEL:
+            return False
+        try:
+            os.rename(destination, _new_file_name(destination))
+            return True
+        except PermissionError:
+            return False
+
+
+def _list_excel_files(dir_path: str):
+    excel_files = []
+    for fn in os.listdir(dir_path):
+        full_path = os.path.join(dir_path, fn)
+        if re.match(r'.+\.xls[bmx]?$', fn) and os.path.isfile(full_path):
+            excel_files.append(full_path)
+
+    return excel_files
+
+
+def _extract_one(source: str, wb_out: ExcelWorkbook):
+    wb_in = load_workbook(source, data_only=True)
+
+    last_row = max_row(wb_out)
+    log.info("Extracting data from '%s' from row %d ...", source, last_row)
+
+    for mapping in MAPPINGS:
+        _copy_one_value(wb_in, wb_out.pyxl, last_row, mapping)
+
+    for col in MERGE_COLS:
+        merge_cells(wb_out, col, last_row)
+
+
+def _new_file_name(fname: str):
+    base, ext = os.path.splitext(fname)
+    return base + ".org" + ext
+
+
+def _print_mappings():
+    for mapping in MAPPINGS:
+        entry = ''
+        if "if" in mapping:
+            entry += "IF '" + mapping["if"] + "' == " + mapping["is"] + ": "
+        entry += mapping["sheet"] + " (" + mapping["in1"]
+        if "in2" in mapping:
+            entry += "+" + mapping["in2"] + ")/2 -> " + mapping["out"]
+        else:
+            entry += ") -> " + mapping["out"]
+        print(entry)
+
+
+def _get_cell_value(wb, sheet, cell):
+    try:
+        v = wb[sheet][cell].value
+        if v is None:
+            log.warning("No value in sheet '%s', cell '%s'", sheet, cell)
+    except KeyError as e:
+        log.warning("Failed to extract value from sheet '%s', cell '%s': %s", sheet, cell, e)
+        v = math.nan
+    return v
+
+
+def _is_number(val):
+    kind = type(val)
+    return kind == int or kind == float and not math.isnan(val)
+
+
+def _copy_one_value(wb_in: Workbook, wb_out: Workbook, last_row: int, mapping: Any):
+    v = cnv.may_be_convert(_get_cell_value(wb_in, mapping["sheet"], mapping["in1"]))
+
+    if "in2" in mapping:
+        v2 = cnv.may_be_convert(_get_cell_value(wb_in, mapping["sheet"], mapping["in2"]))
+        if _is_number(v) and _is_number(v2):
+            v = (v + v2) / 2.0
+
+    v_conv = cnv.convert_na(v)
+
+    if "if" not in mapping or v_conv == cnv.N_A or _get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
+        wb_out.active.cell(
+            row = last_row + mapping["offset"] + 1,
+            column = cnv.col_name_to_idx(mapping["out"]),
+            value = v_conv
+        )

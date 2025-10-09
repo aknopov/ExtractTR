@@ -26,6 +26,14 @@ class TestConverter(unittest.TestCase):
         self.assertFalse(cnv.is_range("123"))
         self.assertFalse(cnv.is_range("abc - def"))
 
+
+    def test_remove_units(self):
+        self.assertEqual("123", cnv.remove_units("123"))
+        self.assertEqual("123", cnv.remove_units("123m"))
+        self.assertEqual("123", cnv.remove_units("123ft"))
+        self.assertEqual("56.9 - 57.6", cnv.remove_units("56.9 - 57.6m"))
+
+
     def test_convert_value(self):
         self.assertEqual(cnv.convert_value("123"), 123.0)
         self.assertEqual(cnv.convert_value("10 - 20"), 15.0)

@@ -1,11 +1,12 @@
 import logging as log
 import math
 import re
+from typing import Any
 
 N_A = "N/A"
 
 
-def col_name_to_idx(s):
+def col_name_to_idx(s: str):
     if isinstance(s, str):
         s = s.strip().upper()
     if len(s) == 1:
@@ -16,7 +17,7 @@ def col_name_to_idx(s):
     log.warning("Invalid column data: %s", s)
     return 0
 
-def col_idx_to_name(i):
+def col_idx_to_name(i: int):
     if i < 27:
         return chr(ord('A') + i - 1)
     if i < 26**2 -  1:
@@ -26,14 +27,14 @@ def col_idx_to_name(i):
 
     return None
 
-def convert_na(value):
+def convert_na(value: Any):
     # Convert None or NaN to 'N/A'
     if value is None or value == '#NUM!' or (isinstance(value, float) and math.isnan(value)):
         return N_A
     return value
 
 
-def may_be_convert(v):
+def may_be_convert(v: Any) -> Any:
     if isinstance(v, str):
         v = v.strip()
         if is_number(v) or is_range(v):
@@ -43,7 +44,7 @@ def may_be_convert(v):
 
 # Deal with either single value or a range
 # return NaN if conversion impossible
-def convert_value(s):
+def convert_value(s: str) -> float:
     if is_number(s):
         return float(s)
     if is_range(s):
@@ -53,15 +54,19 @@ def convert_value(s):
     return math.nan
 
 
-def is_number(s):
+def is_number(s: str) -> bool:
     return bool(s=='nan' or re.match(r"^[+-]?\d+(>?\.\d+)?$", s) is not None)
 
 
-def is_range(s):
+def is_range(s: str) -> bool:
     return bool(re.match(r'^[+-]?\d+(>?\.\d+)? *- *[+-]?\d+(>?\.\d+)?$', s) is not None)
 
 
-def convert_range(s):
+def remove_units(s: str) -> str:
+    return s.replace("m", "").replace("ft", "")
+
+
+def convert_range(s: str) -> float:
     parts = s.split("-", 4)
     start = math.nan
     end = math.nan

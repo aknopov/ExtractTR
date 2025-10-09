@@ -88,6 +88,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
 
         self.extract_button.grid(row=1, column=0, padx=30, pady=15)
 
+        log.info("---------- Starting Application ----------------")
         self.root.mainloop()
 
 

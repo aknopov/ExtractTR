@@ -3,7 +3,7 @@ import os
 from unittest.mock import Mock, patch
 from openpyxl import Workbook
 import converter as cnv
-import xcl_extractor as ecl
+import xcl_extractor as xcl
 import math
 
 
@@ -35,12 +35,42 @@ class TestExtractor(unittest.TestCase):
             os.remove(self.destination_file + ".new")
 
     def test_print_mappings(self):
-        ecl.print_mappings()
+        xcl.print_mappings()
 
     def test_new_file_name(self):
-        self.assertEqual(ecl.new_file_name("file.ext"), "file.org.ext")
-        self.assertEqual(ecl.new_file_name("/path/file.ext"), "/path/file.org.ext")
-        self.assertEqual(ecl.new_file_name("file"), "file.org")
+        self.assertEqual(xcl.new_file_name("file.ext"), "file.org.ext")
+        self.assertEqual(xcl.new_file_name("/path/file.ext"), "/path/file.org.ext")
+        self.assertEqual(xcl.new_file_name("file"), "file.org")
+
+
+    def test_max_row(self):
+        wb_out = Mock()
+        mock_output_sheet = Mock()
+        mock_output_sheet.max_row = 123
+        wb_out.active = mock_output_sheet
+
+        self.assertEqual(xcl.max_row(wb_out), 123)
+
+
+    def test_insert_one_value(self):
+        wb_out = Mock()
+        mock_output_sheet = Mock()
+        wb_out.active = mock_output_sheet
+
+        # Mock converter functions
+        with patch('xcl_extractor.cnv.may_be_convert', return_value=42.5), \
+             patch('xcl_extractor.cnv.convert_na', return_value=42.5), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
+
+            xcl.insert_one_value("foo", wb_out, 10, "B")
+
+            # Verify the cell was written to the correct location
+            mock_output_sheet.cell.assert_called_once_with(
+                row=11,  # last_row + 1
+                column=2,  # column B
+                value=42.5
+            )
+
 
     def test_copy_one_value_basic(self):
         """Test basic value copying without additional parameters"""
@@ -72,7 +102,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=42.5), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
 
-            ecl.copy_one_value(wb_in, wb_out, 10, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 10, mapping)
 
             # Verify the cell was written to the correct location
             mock_output_sheet.cell.assert_called_once_with(
@@ -113,7 +143,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=15.0), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=3):
 
-            ecl.copy_one_value(wb_in, wb_out, 5, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 5, mapping)
 
             # Verify the average value was written
             mock_output_sheet.cell.assert_called_once_with(
@@ -155,7 +185,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=100.0), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=4):
 
-            ecl.copy_one_value(wb_in, wb_out, 8, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 8, mapping)
 
             # Verify the cell was written when condition is met
             mock_output_sheet.cell.assert_called_once_with(
@@ -197,7 +227,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=100.0), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=4):
 
-            ecl.copy_one_value(wb_in, wb_out, 10, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 10, mapping)
 
             # Verify no cell was written when condition is not met
             mock_output_sheet.cell.assert_not_called()
@@ -235,7 +265,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=cnv.N_A), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=4):
 
-            ecl.copy_one_value(wb_in, wb_out, 10, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 10, mapping)
 
             # Verify the cell was written when condition is met
             mock_output_sheet.cell.assert_called_once_with(
@@ -276,7 +306,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=15.0), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=5):
 
-            ecl.copy_one_value(wb_in, wb_out, 12, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 12, mapping)
 
             # Verify only the first value was used (no averaging due to NaN)
             mock_output_sheet.cell.assert_called_once_with(
@@ -317,7 +347,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value="N/A"), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=6):
 
-            ecl.copy_one_value(wb_in, wb_out, 15, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 15, mapping)
 
             # Verify the N/A value was written
             mock_output_sheet.cell.assert_called_once_with(
@@ -355,7 +385,7 @@ class TestExtractor(unittest.TestCase):
              patch('xcl_extractor.cnv.convert_na', return_value=25.5), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=7):
 
-            ecl.copy_one_value(wb_in, wb_out, 20, mapping)
+            xcl.copy_one_value(wb_in, wb_out, 20, mapping)
 
             # Verify the converted value was written
             mock_output_sheet.cell.assert_called_once_with(
@@ -375,7 +405,7 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(return_value=mock_cell)
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        result = ecl.get_cell_value(wb_in, "Input", "D6")
+        result = xcl.get_cell_value(wb_in, "Input", "D6")
 
         self.assertEqual(result, 42.5)
         wb_in.__getitem__.assert_called_once_with("Input")
@@ -391,7 +421,7 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(return_value=mock_cell)
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        result = ecl.get_cell_value(wb_in, "Report", "L6")
+        result = xcl.get_cell_value(wb_in, "Report", "L6")
 
         self.assertEqual(result, "Test String")
 
@@ -405,7 +435,7 @@ class TestExtractor(unittest.TestCase):
         mock_sheet.__getitem__ = Mock(return_value=mock_cell)
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
-        result = ecl.get_cell_value(wb_in, "Input", "D8")
+        result = xcl.get_cell_value(wb_in, "Input", "D8")
 
         self.assertIsNone(result)
 
@@ -417,7 +447,7 @@ class TestExtractor(unittest.TestCase):
         wb_in.__getitem__ = Mock(side_effect=KeyError("Sheet 'NonExistent' not found"))
 
         with patch('xcl_extractor.log.warning') as mock_log:
-            result = ecl.get_cell_value(wb_in, "NonExistent", "A1")
+            result = xcl.get_cell_value(wb_in, "NonExistent", "A1")
 
             self.assertTrue(math.isnan(result))
             mock_log.assert_called_once()
@@ -432,20 +462,20 @@ class TestExtractor(unittest.TestCase):
         wb_in.__getitem__ = Mock(return_value=mock_sheet)
 
         with patch('xcl_extractor.log.warning') as mock_log:
-            result = ecl.get_cell_value(wb_in, "Input", "Z999")
+            result = xcl.get_cell_value(wb_in, "Input", "Z999")
 
             self.assertTrue(math.isnan(result))
             mock_log.assert_called_once()
 
     def test_is_number(self):
-        self.assertTrue(ecl.is_number(3.14159))
-        self.assertTrue(ecl.is_number(42))
+        self.assertTrue(xcl.is_number(3.14159))
+        self.assertTrue(xcl.is_number(42))
 
-        self.assertFalse(ecl.is_number(math.nan))
-        self.assertFalse(ecl.is_number(None))
-        self.assertFalse(ecl.is_number("Hello"))
-        self.assertFalse(ecl.is_number(True))
-        self.assertTrue(ecl.is_number(float('inf')))  # Infinity is not None and not NaN
+        self.assertFalse(xcl.is_number(math.nan))
+        self.assertFalse(xcl.is_number(None))
+        self.assertFalse(xcl.is_number("Hello"))
+        self.assertFalse(xcl.is_number(True))
+        self.assertTrue(xcl.is_number(float('inf')))  # Infinity is not None and not NaN
 
 
 if __name__ == "__main__":

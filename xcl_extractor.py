@@ -3,7 +3,7 @@ import os
 import re
 from tkinter import messagebox
 import logging as log
-from openpyxl import load_workbook, worksheet
+from openpyxl import load_workbook, Workbook, worksheet
 import converter as cnv
 
 INPUT_SHEET = "Input"
@@ -17,7 +17,7 @@ SORT_COLUMN_IDX = cnv.col_name_to_idx("CG")
 LAST_COLUMN_IDX = SORT_COLUMN_IDX
 
 MAPPINGS = [
-    # sheet name, src cell 1, [src cell 2,] dest col
+    # sheet name, src cell 1, [src cell 2,] dest col, row offset[, condition]
     {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "D8", "out": "D", "offset": 0},
     {"sheet": INPUT_SHEET, "in1": "I10", "out": "F", "offset": 0},
@@ -85,10 +85,7 @@ MERGE_COLS = [
     "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV"
 ]
 
-OK = messagebox.OK
-CANCEL = messagebox.CANCEL
-
-def extract_file(source, destination):
+def extract_file(source: str, destination: str):
     log.info("Extracting data from file `%s` to `%s` ...", source, destination)
     wb_out = load_workbook(destination)
     wb_out.active = wb_out[OUTPUT_SHEET]
@@ -99,26 +96,44 @@ def extract_file(source, destination):
     log.info("Done file extracting")
 
 
-def extract_dir(source, destination):
+def extract_dir(source: str, destination: str):
     log.info("Extracting data from directory '%s' to '%s' ...", source, destination)
     wb_out = load_workbook(destination)
     wb_out.active = wb_out[OUTPUT_SHEET]
-    start_row = wb_out.active.max_row + 1
+    start_row = max_row(wb_out) + 1
 
     # Get list of *.xlsx files
     excel_files = list_excel_files(source)
     if len(excel_files) == 0:
-        log.warning("No excel files found in '%s'", source)
+        log.warning("No Excel files found in '%s'", source)
         return
 
     for fn in excel_files:
         extract_one(fn, destination, wb_out)
 
-    end_row = wb_out.active.max_row
-    sort_rows(wb_out.active, start_row, end_row, 1, LAST_COLUMN_IDX)
+    end_row = max_row(wb_out)
+    sort_rows(wb_out.active, start_row, end_row)
 
     save_workbook(wb_out, destination)
     log.info("Done directory extracting")
+
+
+def open_workbook(filename: str) -> Workbook:
+    return load_workbook(filename)
+
+
+def max_row(wb: Workbook) -> int:
+    """Returns index of the last workbook row"""
+    return wb.active.max_row
+
+
+def insert_one_value(val: any, wb_out: Workbook, row: int, column: str):
+    wb_out.active.cell(
+        row = row + 1,
+        column = cnv.col_name_to_idx(column),
+        value = cnv.convert_na(val)
+    )
+
 
 # Try twice
 def rename_orig(destination):
@@ -128,7 +143,7 @@ def rename_orig(destination):
     except PermissionError:
         resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
                                     "Either close other and retry or cancel")
-        if resp == CANCEL:
+        if resp == messagebox.CANCEL:
             return False
         try:
             os.rename(destination, new_file_name(destination))
@@ -161,7 +176,7 @@ def list_excel_files(dir_path):
 def extract_one(source, destination, wb_out):
     wb_in = load_workbook(source, data_only=True)
 
-    last_row = wb_out.active.max_row
+    last_row = max_row(wb_out)
     log.info("Extracting data from '%s' to '%s' from row %d ...", source, destination, last_row)
 
     for mapping in MAPPINGS:
@@ -230,16 +245,14 @@ def merge_cells(wb_out, col, last_row):
 
 # Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
 # Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
-def sort_rows(ws: worksheet, row_start: int, row_end: int, col_start: int, col_end: int):
+def sort_rows(ws: worksheet, row_start: int, row_end: int):
     """ Sorts range in the sheet
         row_start   First row to be sorted
         row_end     Last row to be sorted (inclusive)
-        col_start   Start column to be sorted
-        col_end     End column to be sorted (inclusive)
     """
 
-    col_name_start = cnv.col_idx_to_name(col_start)
-    col_name_end = cnv.col_idx_to_name(col_end)
+    col_name_start = cnv.col_idx_to_name(1)
+    col_name_end = cnv.col_idx_to_name(LAST_COLUMN_IDX)
 
     org_range = col_name_start + str(row_start) + ':' + col_name_end + str(row_end)
     shift = ws.max_row + 1 - row_start

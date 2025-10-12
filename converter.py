@@ -55,7 +55,7 @@ def convert_value(s: str) -> float:
 
 
 def is_number(s: str) -> bool:
-    return bool(s=='nan' or re.match(r"^[+-]?\d+(>?\.\d+)?$", s) is not None)
+    return bool(s=='nan' or re.match(r'^[+-]?\d+(>?\.\d+)?$', s) is not None)
 
 
 def is_range(s: str) -> bool:
@@ -63,7 +63,12 @@ def is_range(s: str) -> bool:
 
 
 def remove_units(s: str) -> str:
-    return s.replace("m", "").replace("ft", "")
+    if re.match(r'^[+-]?\d+(>?\.\d+)?\D*$', s) is not None:
+        #  find the last non-digit and truncate by it
+        for i in range(len(s) - 1, -1, -1):
+            if s[i].isdigit():
+                return s[0:i+1]
+    return None
 
 
 def convert_range(s: str) -> float:

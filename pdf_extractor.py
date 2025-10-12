@@ -7,16 +7,16 @@ import converter as cnv
 import xcl_extractor as xcl
 
 MAPPINGS = [
-    # PDF page, key string (lower case), num values, dest col, offsets (negative - absolute)
-    {"page": 0, "key": "client:", "num": 1, "out": "B", "offset": [0]},
-    {"page": 0, "key": "soil classification:", "num": 1, "out": "F", "offset": [0]},
-    {"page": 0, "key": "borehole/sample no.:", "num": 3, "out": "G", "offset": [0]},
-    {"page": 0, "key": "sample depth (m):", "num": 3, "out": "H", "offset": [0]},
-    {"page": 0, "key": "sample depth (ft):", "num": 3, "out": "H", "offset": [0]},
-    {"page": 0, "key": "sample depth:", "num": 3, "out": "H", "offset": [0]},
-    {"page": 0, "key": "liquid limit:", "num": 1, "out": "I", "offset": [0]},
-    {"page": 0, "key": "plastic limit:", "num": 1, "out": "J", "offset": [0]},
-    {"page": 0, "key": "plastic index:", "num": 1, "out": "K", "offset": [0]},
+    # PDF page, key string (lower case), num values, dest col[, offsets (if num > 1))
+    # Keys are sorted in order of PDF words
+    {"page": 0, "key": "client:", "till": "borehole/sample no.:", "num": 1, "out": "B"},
+    {"page": 0, "key": "borehole/sample no.:", "till": "sample type:",  "num": 1, "out": "G"},
+    {"page": 0, "key": "sample depth (m):", "till": "soil classification:", "num": 1, "out": "H"},
+    {"page": 0, "key": "sample depth:", "till": "soil classification:", "num": 1, "out": "H"},#?
+    {"page": 0, "key": "soil classification:", "till": "liquid limit:", "num": 1, "out": "F"},
+    {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"},
+    {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"},
+    {"page": 0, "key": "plastic index:", "num": 1, "out": "K"},#?
     {"page": 0, "key": "initial water content, (%)", "num": 3, "out": "L", "offset": [0, 1, 2]},
     {"page": 0, "key": "dry unit weight (kn/m3)", "num": 3, "out": "T", "offset": [0, 1, 2]},
     {"page": 0, "key": "void ratio", "num": 3, "out": "U", "offset": [0, 1, 2]},
@@ -27,9 +27,12 @@ MAPPINGS = [
 def extract_file(source: str, destination: str):
     log.info("Extracting data from file `%s` to `%s` ...", source, destination)
 
+    wb_out = xcl.open_workbook(destination)
     with fitz.open(source) as doc:
-        wb_out = xcl.open_workbook(destination)
         _extract_one(doc, wb_out)
+
+    xcl.save_workbook(wb_out, destination)
+    log.info("Done file extracting")
 
 
 def extract_dir(source: str, destination: str):
@@ -77,29 +80,46 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
     key = mapping["key"]
     num_vals =  mapping["num"]
     column = mapping["out"]
-    offset = mapping["offset"]
+    offset = [0]
 
-    key_words = key.lower().split()
     page = doc[page_num]
     page_boxes = page.get_text("words", sort=True)
-
     # As per https://pymupdf.readthedocs.io/en/latest/textpage.html#TextPage.extractWORDS
     page_words = [row[4] for row in page_boxes]
 
+    key_words = key.split()
+    start_idx = _key_index(key_words, page_words, 0) #UC start_idx can be passed down
+    if start_idx == -1:
+        return
+    start_idx += len(key_words)
+
+    end_idx = start_idx + num_vals
+    if "till" in mapping:
+        till_words = mapping["till"].split()
+        idx = _key_index(till_words, page_words, start_idx + 1)
+        # idx = _key_index(till_words, page_words[start_idx:])
+        if idx != -1:
+            end_idx = idx
+
+    values = page_words[start_idx : end_idx]
+
+    if num_vals == 1:
+        xcl.insert_one_value(_merge_vals(values), wb_out, last_row + 1, column)
+    else:
+        offset = mapping["offset"]
+        for j, val in enumerate(values):
+            xcl.insert_one_value(val, wb_out, last_row + offset[j] + 1, column)
+
+
+def _key_index(key_words: list, all_words: list, start_idx: int) -> int:
     num_keys = len(key_words)
-    num_words = len(page_words)
+    num_words = len(all_words)
+    for i in range(start_idx, num_words - num_keys + 1):
+        if [s.lower() for s in all_words[i : i + num_keys]] == key_words:
+            return i
 
-    for i in range(num_words - num_keys + 1):
-        if [s.lower() for s in page_words[i : i + num_keys]] == key_words:
-            values = page_words[i + num_keys : i + num_keys + num_vals]
-            if num_vals > 1 and len(offset) == 1:
-                xcl.insert_one_value(_merge_vals(values), wb_out, last_row + 1, column)
-            else:
-                for j, val in enumerate(values):
-                    xcl.insert_one_value(val, wb_out, last_row + offset[j] + 1, column)
-
-            break
-
+    log.warning("Words '%s' not found in the document", ",".join(key_words))
+    return -1
 
 # Major cases:
 # 1. three values are strings with '/' separator
@@ -117,4 +137,4 @@ def _merge_vals(values: list) -> Any:
             elif not math.isnan(val1):
                 return val1
 
-    return "".join(values)
+    return " ".join(values)

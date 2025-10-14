@@ -90,55 +90,55 @@ class ExcelWorkbook:
     """
     This is a wrapper for 'openpyxl' workbook
     """
-    def __init__(self, pyxl: Workbook):
+    def __init__(self, pyxl: Workbook, filename: str):
         self.pyxl = pyxl
+        self.start_row = pyxl.active.max_row + 1
+        self.filename = filename
 
 
     def __getattr__(self, name):
         return getattr(self.pyxl, name)
 
 
-def extract_file(source: str, destination: str):
+    def get_start_row(self) -> int:
+        return self.start_row
+
+
+def extract_file(source: str, wb_out: ExcelWorkbook) -> bool:
     """Extracts data from one excel file into another in according to mapping rules."""
-    log.info("Extracting data from file `%s` to `%s` ...", source, destination)
-    wb_out = open_workbook(destination)
+    log.info("Extracting data from file `%s` to `%s` ...", source, wb_out.filename)
 
     _extract_one(source, wb_out)
 
-    save_workbook(wb_out, destination)
-    log.info("Done file extracting")
+    log.info("Done Excel extracting")
+    return True
 
 
-def extract_dir(source: str, destination: str):
+def extract_dir(source: str, wb_out: ExcelWorkbook) -> bool:
     """Extracts data from all excel files in source directory to destination file in according to mapping rules."""
-    log.info("Extracting data from directory '%s' to '%s' ...", source, destination)
-    wb_out = open_workbook(destination)
-    start_row = max_row(wb_out) + 1
+    log.info("Extracting data from Excel files in directory '%s' to '%s' ...", source, wb_out.filename)
 
     # Get list of *.xlsx files
     excel_files = _list_excel_files(source)
     if len(excel_files) == 0:
         log.warning("No Excel files found in '%s'", source)
-        return
+        return False
 
     for fn in excel_files:
         _extract_one(fn, wb_out)
 
-    end_row = max_row(wb_out)
-    sort_rows(wb_out, start_row, end_row)
-
-    save_workbook(wb_out, destination)
-    log.info("Done directory extracting")
+    log.info("Done Excel extracting")
+    return True
 
 
 def open_workbook(filename: str) -> ExcelWorkbook:
     """Opens output Excel file."""
     wb = load_workbook(filename)
     wb.active = wb[OUTPUT_SHEET]
-    return ExcelWorkbook(wb)
+    return ExcelWorkbook(wb, filename)
 
 
-def max_row(wb: ExcelWorkbook) -> int:
+def max_row(wb: ExcelWorkbook) -> int: #UC deprecated
     """Returns index of the last workbook row"""
     return wb.pyxl.active.max_row
 
@@ -165,6 +165,7 @@ def save_workbook(wb: ExcelWorkbook, destination: str):
         return
 
     try:
+        log.info("Saving file '%s'", destination)
         wb.pyxl.save(destination)
     except Exception as e: # pylint: disable=broad-except
         log.error("Failed to save file '%s': %s", destination, e)
@@ -173,28 +174,27 @@ def save_workbook(wb: ExcelWorkbook, destination: str):
 
 # Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
 # Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
-def sort_rows(wb: ExcelWorkbook, row_start: int, row_end: int):
-    """ Sorts range in the sheet
+def sort_rows(wb: ExcelWorkbook):
+    """ Sorts range in the active sheet of workbook
 
         Args:
-            row_start   First row to be sorted
-            row_end     Last row to be sorted (inclusive)
+            wb  workbook wrapper
     """
-    log.info("Sorting rows %s - %s in the output spreadsheet", row_start, row_end)
+    log.info("Sorting rows %s - %s in the output spreadsheet by the column %s", wb.start_row, max_row(wb), SORT_COLUMN_IDX)
 
     ws = wb.pyxl.active
 
     col_name_start = cnv.col_idx_to_name(1)
     col_name_end = cnv.col_idx_to_name(LAST_COLUMN_IDX)
 
-    org_range = col_name_start + str(row_start) + ':' + col_name_end + str(row_end)
-    shift = ws.max_row + 1 - row_start
+    org_range = col_name_start + str(wb.start_row) + ':' + col_name_end + str(ws.max_row)
+    shift = ws.max_row + 1 - wb.start_row
 
     # Move whole range to the bottom
     ws.move_range(org_range, rows = shift)
 
     keys=[]
-    for i in range(row_start + shift, row_end + shift + 1):
+    for i in range(wb.start_row + shift, ws.max_row + shift + 1):
         val = ws.cell(row=i, column=SORT_COLUMN_IDX).value or ""
         keys.append((val, i))
 
@@ -202,7 +202,7 @@ def sort_rows(wb: ExcelWorkbook, row_start: int, row_end: int):
     keys.sort()
 
     # Move rows from original place to destination in sorted order
-    to_row = row_start
+    to_row = wb.start_row
     for key in keys:
         row_range = col_name_start + str(key[1]) + ':' + col_name_end + str(key[1])
         ws.move_range(row_range, rows = to_row - key[1])
@@ -218,7 +218,9 @@ def merge_cells(wb_out: ExcelWorkbook, col: str, last_row: int):
 # Tries twice
 def _rename_orig(destination):
     try:
-        os.rename(destination, _new_file_name(destination))
+        new_name = _new_file_name(destination);
+        log.info("Renaming '%s' to '%s'", destination, new_name)
+        os.rename(destination, new_name)
         return True
     except PermissionError:
         resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \

@@ -23,16 +23,16 @@ class TestExtractor(unittest.TestCase):
         mock_output_sheet = Mock()
         mock_output_sheet.max_row = 123
         wb_out.active = mock_output_sheet
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         self.assertEqual(xcl.max_row(excl_wb), 123)
 
 
     def test_insert_one_value(self):
         wb_out = Mock()
-        mock_output_sheet = Mock()
+        mock_output_sheet = Mock(max_row=0)
         wb_out.active = mock_output_sheet
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         # Mock converter functions
         with patch('xcl_extractor.cnv.may_be_convert', return_value=42.5), \

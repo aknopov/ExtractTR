@@ -23,36 +23,30 @@ MAPPINGS = [
 ]
 
 
-def extract_file(source: str, destination: str):
-    log.info("Extracting data from file `%s` to `%s` ...", source, destination)
+def extract_file(source: str, wb_out: xcl.ExcelWorkbook) -> bool:
+    log.info("Extracting data from file `%s` to `%s` ...", source, wb_out.filename)
 
-    wb_out = xcl.open_workbook(destination)
     with fitz.open(source) as doc:
         _extract_one(doc, wb_out)
 
-    xcl.save_workbook(wb_out, destination)
-    log.info("Done file extracting")
+    log.info("Done PDF extracting")
+    return True
 
 
-def extract_dir(source: str, destination: str):
-    log.info("Extracting data from directory '%s' to '%s' ...", source, destination)
+def extract_dir(source: str, wb_out: xcl.ExcelWorkbook) -> bool:
+    log.info("Extracting data from PDF files in directory '%s' to '%s' ...", source, wb_out.filename)
 
     pdf_files = _list_pdf_files(source)
     if len(pdf_files) == 0:
         log.warning("No PDF files found in '%s'", source)
-        return
+        return False
 
-    wb_out = xcl.open_workbook(destination)
-    start_row = xcl.max_row(wb_out) + 1
     for source in pdf_files:
         with fitz.open(source) as doc:
             _extract_one(doc, wb_out)
 
-    end_row = xcl.max_row(wb_out)
-    xcl.sort_rows(wb_out, start_row, end_row)
-
-    xcl.save_workbook(wb_out, destination)
-    log.info("Done directory extracting")
+    log.info("Done PDF extracting")
+    return True
 
 def _list_pdf_files(dir_path: str):
     pdf_files = []

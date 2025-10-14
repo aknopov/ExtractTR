@@ -53,9 +53,9 @@ class TestPdfExtractor(unittest.TestCase):
 
     def test_copy_one_value_basic(self):
         wb_out = Mock()
-        mock_output_sheet = Mock()
+        mock_output_sheet = Mock(max_row=0)
         wb_out.active = mock_output_sheet
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         # Test mapping
         mapping = {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"}
@@ -74,9 +74,9 @@ class TestPdfExtractor(unittest.TestCase):
 
     def test_copy_one_value_not_found(self):
         wb_out = Mock()
-        mock_output_sheet = Mock()
+        mock_output_sheet = Mock(max_row=0)
         wb_out.active = mock_output_sheet
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         # Test mapping
         mapping = {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"}
@@ -91,9 +91,9 @@ class TestPdfExtractor(unittest.TestCase):
 
     def test_copy_one_value_with_merge(self):
         wb_out = Mock()
-        mock_output_sheet = Mock()
+        mock_output_sheet = Mock(max_row=0)
         wb_out.active = mock_output_sheet
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         # Mock converter functions
         with patch('xcl_extractor.cnv.convert_na', side_effect=identity_fun), \
@@ -119,9 +119,9 @@ class TestPdfExtractor(unittest.TestCase):
 
     def test_copy_one_value_for_range(self):
         wb_out = Mock()
-        mock_output_sheet = Mock()
+        mock_output_sheet = Mock(max_row=0)
         wb_out.active = mock_output_sheet
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         mapping = {"page": 0, "key": "sample depth (m):", "till": "liquid limit:", "num": 1, "out": "H"}
 
@@ -139,17 +139,16 @@ class TestPdfExtractor(unittest.TestCase):
 
     def test_extract_one(self):
         wb_out = Mock()
-        mock_output_sheet = Mock()
+        mock_output_sheet = Mock(max_row=0)
         wb_out.active = mock_output_sheet
-        mock_output_sheet.max_row = 1
-        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
         excl_wb.copy_count = 0
         excl_wb.merge_count = 0
 
-        def increase_copy_count(doc, wb_out, last_row, mapping):
+        def increase_copy_count(_doc, wb_out, _last_row, _mapping):
             wb_out.copy_count += 1
 
-        def increase_merge_count(wb_out, col, last_row):
+        def increase_merge_count(wb_out, _col, _last_row):
             wb_out.merge_count += 1
 
         with patch('pdf_extractor._copy_one_value', side_effect=increase_copy_count), \

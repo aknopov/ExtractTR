@@ -62,12 +62,12 @@ def is_range(s: str) -> bool:
     return bool(re.match(r'^[+-]?\d+(>?\.\d+)? *- *[+-]?\d+(>?\.\d+)?$', s) is not None)
 
 
-def remove_units(s: str) -> str:
+def remove_units(s: str) -> float:
     if re.match(r'^[+-]?\d+(>?\.\d+)?\D*$', s) is not None:
         #  find the last non-digit and truncate by it
         for i in range(len(s) - 1, -1, -1):
             if s[i].isdigit():
-                return s[0:i+1]
+                return convert_value(s[0:i+1])
     return None
 
 

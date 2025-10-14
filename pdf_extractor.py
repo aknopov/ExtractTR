@@ -17,10 +17,9 @@ MAPPINGS = [
     {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"},
     {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"},
     {"page": 0, "key": "plastic index:", "num": 1, "out": "K"},#?
-    {"page": 0, "key": "initial water content, (%)", "num": 3, "out": "L", "offset": [0, 1, 2]},
-    {"page": 0, "key": "dry unit weight (kn/m3)", "num": 3, "out": "T", "offset": [0, 1, 2]},
-    {"page": 0, "key": "void ratio", "num": 3, "out": "U", "offset": [0, 1, 2]},
-    # {"page": 0, "key": "", "num": 1, "out": "", "offset": [0]},
+    {"page": 0, "key": "initial water content, (%)", "num": 3, "out": "L"},
+    {"page": 0, "key": "void ratio", "num": 3, "out": "U"},
+    {"page": 0, "key": "dry unit weight (kn/m3)", "num": 3, "out": "T"},
 ]
 
 
@@ -80,7 +79,6 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
     key = mapping["key"]
     num_vals =  mapping["num"]
     column = mapping["out"]
-    offset = [0]
 
     page = doc[page_num]
     page_boxes = page.get_text("words", sort=True)
@@ -103,12 +101,11 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
 
     values = page_words[start_idx : end_idx]
 
-    if num_vals == 1:
+    if num_vals == 1 and len(values) > 1:
         xcl.insert_one_value(_merge_vals(values), wb_out, last_row + 1, column)
     else:
-        offset = mapping["offset"]
         for j, val in enumerate(values):
-            xcl.insert_one_value(val, wb_out, last_row + offset[j] + 1, column)
+            xcl.insert_one_value(cnv.remove_units(val), wb_out, last_row + j + 1, column)
 
 
 def _key_index(key_words: list, all_words: list, start_idx: int) -> int:
@@ -130,8 +127,8 @@ def _merge_vals(values: list) -> Any:
         if values[1] == '/':
             return values[0] + '_' + values[2]
         else:
-            val1 = cnv.convert_value(cnv.remove_units(values[0]))
-            val2 = cnv.convert_value(cnv.remove_units(values[2]))
+            val1 = cnv.remove_units(values[0])
+            val2 = cnv.remove_units(values[2])
             if values[1] == '-' and not math.isnan(val1) and not math.isnan(val2):
                 return (val1 + val2) / 2
             elif not math.isnan(val1):

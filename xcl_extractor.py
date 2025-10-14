@@ -198,7 +198,7 @@ def sort_rows(wb: ExcelWorkbook, row_start: int, row_end: int):
         val = ws.cell(row=i, column=SORT_COLUMN_IDX).value or ""
         keys.append((val, i))
 
-    # Sorts by all fields in the tuple!
+    # Sorts tuples by val and row (the tuple)!
     keys.sort()
 
     # Move rows from original place to destination in sorted order

@@ -68,8 +68,25 @@ class TestPdfExtractor(unittest.TestCase):
         mock_output_sheet.cell.assert_called_once_with(
             row=11,  # last_row + 1
             column=2,  # column B
-            value="39"
+            value=39.0
         )
+
+
+    def test_copy_one_value_not_found(self):
+        wb_out = Mock()
+        mock_output_sheet = Mock()
+        wb_out.active = mock_output_sheet
+        excl_wb = xcl.ExcelWorkbook(wb_out)
+
+        # Test mapping
+        mapping = {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"}
+
+        with patch('xcl_extractor.cnv.convert_na', side_effect=identity_fun), \
+             patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
+
+            pdf._copy_one_value(self.doc, excl_wb, 10, mapping)
+
+        mock_output_sheet.assert_not_called()
 
 
     def test_copy_one_value_with_merge(self):
@@ -118,6 +135,31 @@ class TestPdfExtractor(unittest.TestCase):
             column=8,  # column B
             value=57.25
         )
+
+
+    def test_extract_one(self):
+        wb_out = Mock()
+        mock_output_sheet = Mock()
+        wb_out.active = mock_output_sheet
+        mock_output_sheet.max_row = 1
+        excl_wb = xcl.ExcelWorkbook(wb_out)
+        excl_wb.copy_count = 0
+        excl_wb.merge_count = 0
+
+        def increase_copy_count(doc, wb_out, last_row, mapping):
+            wb_out.copy_count += 1
+
+        def increase_merge_count(wb_out, col, last_row):
+            wb_out.merge_count += 1
+
+        with patch('pdf_extractor._copy_one_value', side_effect=increase_copy_count), \
+             patch('xcl_extractor.merge_cells', side_effect=increase_merge_count):
+
+            pdf._extract_one(self.doc, excl_wb)
+
+        self.assertEqual(len(pdf.MAPPINGS), excl_wb.copy_count)
+        self.assertEqual(len(xcl.MERGE_COLS), excl_wb.merge_count)
+
 
     # UC
     # def test_extract_file(self): #UC just for testing

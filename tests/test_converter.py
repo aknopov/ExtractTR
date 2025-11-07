@@ -32,7 +32,7 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(123.0, cnv.remove_units("123m"))
         self.assertEqual(123.0, cnv.remove_units("123%"))
         self.assertEqual(123.0, cnv.remove_units("123ft"))
-        self.assertIsNone(cnv.remove_units("abc"))
+        self.assertEqual("abc", cnv.remove_units("abc"))
 
 
     def test_convert_value(self):

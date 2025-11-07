@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch
-import fitz # PyMuPDF
+import fitz  # PyMuPDF
 import pdf_extractor as pdf
 import xcl_extractor as xcl
 
@@ -25,12 +25,10 @@ class TestPdfExtractor(unittest.TestCase):
         page.insert_text((350, 110), "56.9 - 57.6m")
         page.insert_text((200, 130), "Liquid Limit:")
         page.insert_text((350, 130), "39")
-        #UC self.doc.save("tests/test_source.pdf")
-
+        # UC self.doc.save("tests/test_source.pdf")
 
     def tearDown(self):
         self.doc.close()
-
 
     def test_validate_mappings(self):
         for mapping in pdf.MAPPINGS:
@@ -42,14 +40,12 @@ class TestPdfExtractor(unittest.TestCase):
             if "till" in mapping:
                 self.assertEqual(mapping["num"], 1)
 
-
     def test_merge_vals(self):
         self.assertEqual("ENG-PQ24-15_SC40", pdf._merge_vals(["ENG-PQ24-15", "/", "SC40"]))
         self.assertEqual(3.0, pdf._merge_vals(["2", "-", "4"]))
         self.assertEqual(3.0, pdf._merge_vals(["2", "-", "4m"]))
         self.assertEqual(2.0, pdf._merge_vals(["2", "something", "4"]))
         self.assertEqual("a b", pdf._merge_vals(["a", "b"]))
-
 
     def test_copy_one_value_basic(self):
         wb_out = Mock()
@@ -60,6 +56,7 @@ class TestPdfExtractor(unittest.TestCase):
         # Test mapping
         mapping = {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"}
 
+        # fmt: off
         with patch('xcl_extractor.cnv.convert_na', side_effect=identity_fun), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
 
@@ -70,7 +67,7 @@ class TestPdfExtractor(unittest.TestCase):
             column=2,  # column B
             value=39.0
         )
-
+        # fmt: on
 
     def test_copy_one_value_not_found(self):
         wb_out = Mock()
@@ -81,13 +78,14 @@ class TestPdfExtractor(unittest.TestCase):
         # Test mapping
         mapping = {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"}
 
+        # fmt: off
         with patch('xcl_extractor.cnv.convert_na', side_effect=identity_fun), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
+        # fmt: on
 
             pdf._copy_one_value(self.doc, excl_wb, 10, mapping)
 
         mock_output_sheet.assert_not_called()
-
 
     def test_copy_one_value_with_merge(self):
         wb_out = Mock()
@@ -96,10 +94,12 @@ class TestPdfExtractor(unittest.TestCase):
         excl_wb = xcl.ExcelWorkbook(wb_out, "test_file.xls")
 
         # Mock converter functions
+        # fmt: off
         with patch('xcl_extractor.cnv.convert_na', side_effect=identity_fun), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=2):
+        # fmt: on
             # 1
-            mapping = {"page": 0, "key": "borehole/sample no.:", "till": "sample type:",  "num": 1, "out": "B"}
+            mapping = {"page": 0, "key": "borehole/sample no.:", "till": "sample type:", "num": 1, "out": "B"}
             pdf._copy_one_value(self.doc, excl_wb, 10, mapping)
             mock_output_sheet.cell.assert_called_once_with(
                 row=11,  # last_row + offset + 1 = 10 + 0 + 1
@@ -116,7 +116,6 @@ class TestPdfExtractor(unittest.TestCase):
                 value="Client Name in Few Words"
             )
 
-
     def test_copy_one_value_for_range(self):
         wb_out = Mock()
         mock_output_sheet = Mock(max_row=0)
@@ -125,6 +124,7 @@ class TestPdfExtractor(unittest.TestCase):
 
         mapping = {"page": 0, "key": "sample depth (m):", "till": "liquid limit:", "num": 1, "out": "H"}
 
+        # fmt: off
         with patch('xcl_extractor.cnv.convert_na', side_effect=identity_fun), \
              patch('xcl_extractor.cnv.col_name_to_idx', return_value=8):
 
@@ -135,7 +135,7 @@ class TestPdfExtractor(unittest.TestCase):
             column=8,  # column B
             value=57.25
         )
-
+        # fmt: on
 
     def test_extract_one(self):
         wb_out = Mock()
@@ -151,14 +151,14 @@ class TestPdfExtractor(unittest.TestCase):
         def increase_merge_count(wb_out, _col, _last_row):
             wb_out.merge_count += 1
 
+        # fmt: off
         with patch('pdf_extractor._copy_one_value', side_effect=increase_copy_count), \
              patch('xcl_extractor.merge_cells', side_effect=increase_merge_count):
-
+        # fmt: on
             pdf._extract_one(self.doc, excl_wb)
 
         self.assertEqual(len(pdf.MAPPINGS), excl_wb.copy_count)
         self.assertEqual(len(xcl.MERGE_COLS), excl_wb.merge_count)
-
 
     # UC
     # def test_extract_file(self): #UC just for testing

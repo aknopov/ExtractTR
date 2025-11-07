@@ -78,27 +78,26 @@ MAPPINGS = [
     {"sheet": FLAC_SHEET, "in1": "AD23", "out": "BW", "offset": 1},
     {"sheet": FLAC_SHEET, "in1": "AD24", "out": "BW", "offset": 2},
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "CG", "offset": 0},
-    {"sheet": INPUT_SHEET, "in1": "D11", "out": "CG", "offset": 1},
-    {"sheet": INPUT_SHEET, "in1": "D11", "out": "CG", "offset": 2},
 ]
 
+# fmt: off
 MERGE_COLS = [
-    "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV"
+    "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV", "CG"
 ]
+# fmt: on
 
 class ExcelWorkbook:
     """
     This is a wrapper for 'openpyxl' workbook
     """
+
     def __init__(self, pyxl: Workbook, filename: str):
         self.pyxl = pyxl
         self.start_row = pyxl.active.max_row + 1
         self.filename = filename
 
-
     def __getattr__(self, name):
         return getattr(self.pyxl, name)
-
 
     def get_start_row(self) -> int:
         return self.start_row
@@ -138,7 +137,7 @@ def open_workbook(filename: str) -> ExcelWorkbook:
     return ExcelWorkbook(wb, filename)
 
 
-def max_row(wb: ExcelWorkbook) -> int: #UC deprecated
+def max_row(wb: ExcelWorkbook) -> int:  # UC deprecated
     """Returns index of the last workbook row"""
     return wb.pyxl.active.max_row
 
@@ -146,39 +145,36 @@ def max_row(wb: ExcelWorkbook) -> int: #UC deprecated
 def insert_one_value(val: Any, wb: ExcelWorkbook, row: int, column: str):
     """Inserts a value into Excel workbook in specified cell
 
-        Args:
-            val - value
-            wb_out - Excel wrapper
-            row - row at which to insert
-            column - column identifier, like 'B'
+    Args:
+        val - value
+        wb_out - Excel wrapper
+        row - row at which to insert
+        column - column identifier, like 'B'
     """
-    wb.pyxl.active.cell(
-        row = row,
-        column = cnv.col_name_to_idx(column),
-        value = cnv.convert_na(val)
-    )
+    wb.pyxl.active.cell(row=row, column=cnv.col_name_to_idx(column), value=cnv.convert_na(val))
 
 
 def save_workbook(wb: ExcelWorkbook, destination: str):
     """Saves workbook into a file specified as a path."""
-    if not _rename_orig(destination):
+    if not _rename_orig(destination, 3):
         return
 
     try:
         log.info("Saving file '%s'", destination)
         wb.pyxl.save(destination)
-    except Exception as e: # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except
         log.error("Failed to save file '%s': %s", destination, e)
         os.rename(_new_file_name(destination), destination)
 
 
 # Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
 # Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
+# TODO sort by goup, project and well, consider merged cells
 def sort_rows(wb: ExcelWorkbook):
-    """ Sorts range in the active sheet of workbook
+    """Sorts range in the active sheet of workbook
 
-        Args:
-            wb  workbook wrapper
+    Args:
+        wb  workbook wrapper
     """
     log.info("Sorting rows %s - %s in the output spreadsheet by the column %s", wb.start_row, max_row(wb), SORT_COLUMN_IDX)
 
@@ -186,15 +182,17 @@ def sort_rows(wb: ExcelWorkbook):
 
     col_name_start = cnv.col_idx_to_name(1)
     col_name_end = cnv.col_idx_to_name(LAST_COLUMN_IDX)
+    start_row = wb.start_row
+    end_row = ws.max_row
 
-    org_range = col_name_start + str(wb.start_row) + ':' + col_name_end + str(ws.max_row)
-    shift = ws.max_row + 1 - wb.start_row
+    org_range = col_name_start + str(start_row) + ":" + col_name_end + str(end_row)
+    shift = end_row - start_row + 1
 
     # Move whole range to the bottom
-    ws.move_range(org_range, rows = shift)
+    ws.move_range(org_range, rows=shift)
 
-    keys=[]
-    for i in range(wb.start_row + shift, ws.max_row + shift + 1):
+    keys = []
+    for i in range(start_row + shift, end_row + shift + 1):
         val = ws.cell(row=i, column=SORT_COLUMN_IDX).value or ""
         keys.append((val, i))
 
@@ -204,8 +202,8 @@ def sort_rows(wb: ExcelWorkbook):
     # Move rows from original place to destination in sorted order
     to_row = wb.start_row
     for key in keys:
-        row_range = col_name_start + str(key[1]) + ':' + col_name_end + str(key[1])
-        ws.move_range(row_range, rows = to_row - key[1])
+        row_range = col_name_start + str(key[1]) + ":" + col_name_end + str(key[1])
+        ws.move_range(row_range, rows=to_row - key[1])
         to_row += 1
 
 
@@ -215,16 +213,21 @@ def merge_cells(wb_out: ExcelWorkbook, col: str, last_row: int):
     wb_out.pyxl.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=col_idx, end_column=col_idx)
 
 
-# Tries twice
-def _rename_orig(destination):
+# Tries number of times
+def _rename_orig(destination, max_tries):
+    new_name = _new_file_name(destination)
+    log.info("Renaming '%s' to '%s'", destination, new_name)
     try:
-        new_name = _new_file_name(destination);
-        log.info("Renaming '%s' to '%s'", destination, new_name)
         os.rename(destination, new_name)
         return True
+    except FileExistsError:
+        if max_tries == 0:
+            return False
+        return _rename_orig(new_name, max_tries-1)
     except PermissionError:
-        resp = messagebox.askretrycancel(message=f"File '{destination}' is opened in another application.\n" \
-                                    "Either close other and retry or cancel")
+        resp = messagebox.askretrycancel(
+            message=f"File '{destination}' is opened in another application.\n" "Either close other and retry or cancel"
+        )
         if resp == messagebox.CANCEL:
             return False
         try:
@@ -238,7 +241,7 @@ def _list_excel_files(dir_path: str):
     excel_files = []
     for fn in os.listdir(dir_path):
         full_path = os.path.join(dir_path, fn)
-        if re.match(r'.+\.xls[bmx]?$', fn) and os.path.isfile(full_path):
+        if re.match(r".+\.xls[bmx]?$", fn) and os.path.isfile(full_path):
             excel_files.append(full_path)
 
     return excel_files
@@ -248,7 +251,7 @@ def _extract_one(source: str, wb_out: ExcelWorkbook):
     wb_in = load_workbook(source, data_only=True)
 
     last_row = max_row(wb_out)
-    log.info("Extracting data from '%s' from row %d ...", source, last_row)
+    log.info("Extracting data from '%s' from row %d ...", source, last_row + 1)
 
     for mapping in MAPPINGS:
         _copy_one_value(wb_in, wb_out.pyxl, last_row, mapping)
@@ -264,7 +267,7 @@ def _new_file_name(fname: str):
 
 def _print_mappings():
     for mapping in MAPPINGS:
-        entry = ''
+        entry = ""
         if "if" in mapping:
             entry += "IF '" + mapping["if"] + "' == " + mapping["is"] + ": "
         entry += mapping["sheet"] + " (" + mapping["in1"]
@@ -302,8 +305,10 @@ def _copy_one_value(wb_in: Workbook, wb_out: Workbook, last_row: int, mapping: A
     v_conv = cnv.convert_na(v)
 
     if "if" not in mapping or v_conv == cnv.N_A or _get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
+# fmt: off
         wb_out.active.cell(
             row = last_row + mapping["offset"] + 1,
             column = cnv.col_name_to_idx(mapping["out"]),
             value = v_conv
         )
+# fmt: on

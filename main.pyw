@@ -152,9 +152,10 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
 
     def open_file_dialog(self, start_dir):
         lnx_path = filedialog.askopenfilename(
-            title="Select a Spreadsheet",
+            title="Select File",
             initialdir=start_dir,
             filetypes=[
+                ("Known files", "*.xls* *.pdf"),
                 ("Excel files", "*.xls*"),
                 ("PDF files", "*.pdf"),
                 ("All files", "*.*"),
@@ -185,7 +186,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
             file_modified = pdf.extract_dir(self.source_dir, workbook) or file_modified
 
         if file_modified:
-            xcl.sort_rows(workbook)
+            #TODO disabled: xcl.sort_rows(workbook)
             xcl.save_workbook(workbook, self.destination_file)
 
         self.post_extract_ui()
@@ -214,7 +215,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
         log_name = Path.home().joinpath("extractr.log").absolute()
         rot_handler = RotatingFileHandler(log_name, maxBytes=5 * 1024 * 1024, backupCount=5)
         log.basicConfig(
-            level=log.INFO,
+            level=log.DEBUG,
             format="%(asctime)s - %(levelname)s - %(message)s",
             handlers=[rot_handler],
         )

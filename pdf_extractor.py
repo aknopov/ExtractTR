@@ -2,24 +2,39 @@ import os
 import logging as log
 import math
 from typing import Any
-import fitz # PyMuPDF
+import fitz  # PyMuPDF
 import converter as cnv
 import xcl_extractor as xcl
 
 MAPPINGS = [
     # PDF page, key string (lower case), num values, dest col[, offsets (if num > 1))
     # Keys are sorted in order of PDF words
+    {"page": 0, "key": "soil group:", "num": 1, "out": "AN"},
+    {"page": 0, "key": "soil group:", "num": 1, "out": "CG"},
     {"page": 0, "key": "client:", "till": "borehole/sample no.:", "num": 1, "out": "B"},
     {"page": 0, "key": "borehole/sample no.:", "till": "sample type:",  "num": 1, "out": "G"},
     {"page": 0, "key": "sample depth (m):", "till": "soil classification:", "num": 1, "out": "H"},
-    {"page": 0, "key": "sample depth:", "till": "soil classification:", "num": 1, "out": "H"},#?
     {"page": 0, "key": "soil classification:", "till": "liquid limit:", "num": 1, "out": "F"},
     {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"},
     {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"},
-    {"page": 0, "key": "plastic index:", "num": 1, "out": "K"},#?
     {"page": 0, "key": "initial water content, (%)", "num": 3, "out": "L"},
     {"page": 0, "key": "void ratio", "num": 3, "out": "U"},
     {"page": 0, "key": "dry unit weight (kn/m3)", "num": 3, "out": "T"},
+    {"page": 0, "key": "gravel:", "num": 1, "out": "AA"},
+    {"page": 0, "key": "sand:", "num": 1, "out": "AB"},
+    {"page": 0, "key": "silt:", "num": 1, "out": "AC"},
+    {"page": 0, "key": "clay:", "num": 1, "out": "AD"},
+    {"page": 0, "key": "fines:", "num": 1, "out": "AD"},
+    {"page": 0, "key": "peak deviator stress, (kpa)", "num": 3, "out": "AS"},
+    {"page": 0, "key": "normal stress, (kpa)", "num": 3, "out": "BB"},
+    # CD rules
+    {"page": 2, "key": "effective soil angle of internal friction:", "if": "consolidated drained", "num": 1, "out": "AI"},
+    {"page": 2, "key": "effective soil cohesion:", "if": "consolidated drained", "num": 1, "out": "AJ"},
+    # CU rules
+    {"page": 2, "key": "soil angle of internal friction:", "if": "consolidated undrained", "num": 1, "out": "AG"},
+    {"page": 2, "key": "soil cohesion:", "if": "consolidated undrained", "num": 1, "out": "AH"},
+    {"page": 3, "key": "effective soil angle of internal friction:", "if": "consolidated undrained", "num": 1, "out": "AI"},
+    {"page": 3, "key": "effective soil cohesion:", "if": "consolidated undrained", "num": 1, "out": "AJ"},
 ]
 
 
@@ -48,6 +63,7 @@ def extract_dir(source: str, wb_out: xcl.ExcelWorkbook) -> bool:
     log.info("Done PDF extracting")
     return True
 
+
 def _list_pdf_files(dir_path: str):
     pdf_files = []
     for fn in os.listdir(dir_path):
@@ -57,9 +73,10 @@ def _list_pdf_files(dir_path: str):
 
     return pdf_files
 
+
 def _extract_one(doc: fitz.Document, wb_out: xcl.ExcelWorkbook):
     last_row = xcl.max_row(wb_out)
-    log.info("Extracting data from '%s' from row %d ...", doc.name, last_row)
+    log.info("Extracting data from '%s' from row %d ...", doc.name, last_row + 1)
 
     for mapping in MAPPINGS:
         _copy_one_value(doc, wb_out, last_row, mapping)
@@ -71,7 +88,7 @@ def _extract_one(doc: fitz.Document, wb_out: xcl.ExcelWorkbook):
 def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int, mapping: Any):
     page_num = mapping["page"]
     key = mapping["key"]
-    num_vals =  mapping["num"]
+    num_vals = mapping["num"]
     column = mapping["out"]
 
     page = doc[page_num]
@@ -79,8 +96,11 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
     # As per https://pymupdf.readthedocs.io/en/latest/textpage.html#TextPage.extractWORDS
     page_words = [row[4] for row in page_boxes]
 
+    if "if" in mapping and _key_index(mapping["if"].split(), page_words, 0) == -1:
+        return
+
     key_words = key.split()
-    start_idx = _key_index(key_words, page_words, 0) #UC start_idx can be passed down
+    start_idx = _key_index(key_words, page_words, 0)  # UC start_idx can be passed down
     if start_idx == -1:
         return
     start_idx += len(key_words)
@@ -89,11 +109,10 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
     if "till" in mapping:
         till_words = mapping["till"].split()
         idx = _key_index(till_words, page_words, start_idx + 1)
-        # idx = _key_index(till_words, page_words[start_idx:])
         if idx != -1:
             end_idx = idx
 
-    values = page_words[start_idx : end_idx]
+    values = page_words[start_idx:end_idx]
 
     if num_vals == 1 and len(values) > 1:
         xcl.insert_one_value(_merge_vals(values), wb_out, last_row + 1, column)
@@ -109,21 +128,23 @@ def _key_index(key_words: list, all_words: list, start_idx: int) -> int:
         if [s.lower() for s in all_words[i : i + num_keys]] == key_words:
             return i
 
-    log.warning("Words '%s' not found in the document", ",".join(key_words))
+    log.warning("Key '%s' not found in the document", " ".join(key_words))
     return -1
+
 
 # Major cases:
 # 1. three values are strings with '/' separator
-# 2. thee values are numbers with optional units separated with '-'
-# 3. first value is number with optional unit
+# 2. three values are numbers with optional units separated with '-'
+# 3. first value is a number with optional unit
+# Otherwise concatenate values with a space
 def _merge_vals(values: list) -> Any:
     if len(values) == 3:
-        if values[1] == '/':
-            return values[0] + '_' + values[2]
+        if values[1] == "/":
+            return values[0] + "_" + values[2]
         else:
             val1 = cnv.remove_units(values[0])
             val2 = cnv.remove_units(values[2])
-            if values[1] == '-' and not math.isnan(val1) and not math.isnan(val2):
+            if values[1] == "-" and not math.isnan(val1) and not math.isnan(val2):
                 return (val1 + val2) / 2
             elif not math.isnan(val1):
                 return val1

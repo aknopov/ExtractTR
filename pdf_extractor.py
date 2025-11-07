@@ -17,6 +17,7 @@ MAPPINGS = [
     {"page": 0, "key": "soil classification:", "till": "liquid limit:", "num": 1, "out": "F"},
     {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"},
     {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"},
+    {"calc": "=I<row>-J<row>", "out": "K"},
     {"page": 0, "key": "initial water content, (%)", "num": 3, "out": "L"},
     {"page": 0, "key": "void ratio", "num": 3, "out": "U"},
     {"page": 0, "key": "dry unit weight (kn/m3)", "num": 3, "out": "T"},
@@ -86,6 +87,10 @@ def _extract_one(doc: fitz.Document, wb_out: xcl.ExcelWorkbook):
 
 
 def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int, mapping: Any):
+    if "calc" in mapping:
+        _calc_value(wb_out, last_row, mapping)
+        return
+
     page_num = mapping["page"]
     key = mapping["key"]
     num_vals = mapping["num"]
@@ -120,6 +125,11 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
         for j, val in enumerate(values):
             xcl.insert_one_value(cnv.remove_units(val), wb_out, last_row + j + 1, column)
 
+def _calc_value(wb_out: xcl.ExcelWorkbook, last_row: int, mapping: Any):
+    expression = mapping["calc"]
+    column = mapping["out"]
+    expression = expression.replace("<row>", str(last_row + 1))
+    xcl.insert_one_value(expression, wb_out, last_row + 1, column)
 
 def _key_index(key_words: list, all_words: list, start_idx: int) -> int:
     num_keys = len(key_words)

@@ -5,7 +5,8 @@ from tkinter import filedialog, messagebox
 import logging as log
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-import extractor as ex
+import pdf_extractor as pdf
+import xcl_extractor as xcl
 import prefs
 import version
 
@@ -88,6 +89,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
 
         self.extract_button.grid(row=1, column=0, padx=30, pady=15)
 
+        log.info("---------- Starting Application ----------------")
         self.root.mainloop()
 
 
@@ -150,10 +152,12 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
 
     def open_file_dialog(self, start_dir):
         lnx_path = filedialog.askopenfilename(
-            title="Select a Spreadsheet",
+            title="Select File",
             initialdir=start_dir,
             filetypes=[
+                ("Known files", "*.xls* *.pdf"),
                 ("Excel files", "*.xls*"),
+                ("PDF files", "*.pdf"),
                 ("All files", "*.*"),
             ],
         )
@@ -166,12 +170,24 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
 
 
     def do_extract(self):
+
+        workbook = xcl.open_workbook(self.destination_file)
+        file_modified = False
+
         if self.source_file != "":
             self.prefs.save_dirs(os.path.dirname(self.source_file), os.path.dirname(self.destination_file))
-            ex.extract_file(self.source_file, self.destination_file)
+            if self.source_file.lower().endswith(".pdf"):
+                file_modified = pdf.extract_file(self.source_file, workbook)
+            else:
+                file_modified = xcl.extract_file(self.source_file, workbook)
         else:
             self.prefs.save_dirs(self.source_dir, os.path.dirname(self.destination_file))
-            ex.extract_dir(self.source_dir, self.destination_file)
+            file_modified = xcl.extract_dir(self.source_dir, workbook)
+            file_modified = pdf.extract_dir(self.source_dir, workbook) or file_modified
+
+        if file_modified:
+            xcl.sort_rows(workbook)
+            xcl.save_workbook(workbook, self.destination_file)
 
         self.post_extract_ui()
 
@@ -196,12 +212,12 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
         self.extract_button.update()
 
     def configure_logging(self):
-        log_name = Path.home().joinpath("extractr.log").absolute()
-        rot_handler = RotatingFileHandler(log_name, maxBytes=5 * 1024 * 1024, backupCount=5)
+        log_path = Path.home().joinpath("extractr.log").absolute()
+        file_handler = RotatingFileHandler(log_path, maxBytes=5 * 1024 * 1024, backupCount=5, encoding='utf-8')
         log.basicConfig(
-            level=log.INFO,
+            level=log.DEBUG,
             format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[rot_handler],
+            handlers=[file_handler]
         )
 
 app = ExtractTRApp()

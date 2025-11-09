@@ -9,12 +9,12 @@ This script needs to be run once for each computer and user.
 
 ## User Notes
 - The app copies soil test information from source file(s) to the destination.
-- It merges certain cells in columns based on source samples and sorts the resulting data by the soil group in column "CG".
-- The app can process a single Excel file or all files in a directory.
-- Supported file formats: XLSX, XLSM and XLSB.
+- It merges certain cells in columns based on source samples and sorts the resulting data by the soil group in column "AN".
+- The app can process a single Excel or PDF file or all such files in a directory.
+- Supported file formats: XLSX, XLSM, XLSB and PDF.
 - To clear any path in the main window, open the corresponding file dialog and press the "Cancel" button.
 - The app searches for source and destination files starting the last used directories.
-These directories are stored in `%USERPROFILE%\.extractrc` file
+These directories are stored in the configuration file `%USERPROFILE%\.extractrc`.
 - It also creates a log file at `%USERPROFILE%\extractr.log`, which records processed files and any encountered errors.
 To view the log, copy this path into Explorer. You may be prompted to choose a program to open the file.
 - The original destination file is preserved as `*.org.xlsx`.

@@ -9,33 +9,33 @@ import xcl_extractor as xcl
 MAPPINGS = [
     # PDF page, key string (lower case), num values, dest col[, offsets (if num > 1))
     # Keys are sorted in order of PDF words
-    {"page": 0, "key": "soil group:", "num": 1, "out": "AN"},
-    {"page": 0, "key": "soil group:", "num": 1, "out": "CG"},
-    {"page": 0, "key": "client:", "till": "borehole/sample no.:", "num": 1, "out": "B"},
-    {"page": 0, "key": "borehole/sample no.:", "till": "sample type:",  "num": 1, "out": "G"},
-    {"page": 0, "key": "sample depth (m):", "till": "soil classification:", "num": 1, "out": "H"},
-    {"page": 0, "key": "soil classification:", "till": "liquid limit:", "num": 1, "out": "F"},
-    {"page": 0, "key": "liquid limit:", "num": 1, "out": "I"},
-    {"page": 0, "key": "plastic limit:", "num": 1, "out": "J"},
+    {"page": 0, "key": "soil group", "num": 1, "out": "AN"},
+    {"page": 0, "key": "soil group", "num": 1, "out": "CG"},
+    {"page": 0, "key": "client", "till": "borehole/sample no.", "num": 1, "out": "B"},
+    {"page": 0, "key": "borehole/sample no.", "till": "sample type",  "num": 1, "out": "G"},
+    {"page": 0, "key": "sample depth (m)", "till": "soil classification", "num": 1, "out": "H"},
+    {"page": 0, "key": "soil classification", "till": "liquid limit", "num": 1, "out": "F"},
+    {"page": 0, "key": "liquid limit", "num": 1, "out": "I"},
+    {"page": 0, "key": "plastic limit", "num": 1, "out": "J"},
     {"calc": "=I<row>-J<row>", "out": "K"},
     {"page": 0, "key": "initial water content, (%)", "num": 3, "out": "L"},
     {"page": 0, "key": "void ratio", "num": 3, "out": "U"},
     {"page": 0, "key": "dry unit weight (kn/m3)", "num": 3, "out": "T"},
-    {"page": 0, "key": "gravel:", "num": 1, "out": "AA"},
-    {"page": 0, "key": "sand:", "num": 1, "out": "AB"},
-    {"page": 0, "key": "silt:", "num": 1, "out": "AC"},
-    {"page": 0, "key": "clay:", "num": 1, "out": "AD"},
-    {"page": 0, "key": "fines:", "num": 1, "out": "AD"},
+    {"page": 0, "key": "gravel", "num": 1, "out": "AA"},
+    {"page": 0, "key": "sand", "num": 1, "out": "AB"},
+    {"page": 0, "key": "silt", "num": 1, "out": "AC"},
+    {"page": 0, "key": "clay", "num": 1, "out": "AD"},
+    {"page": 0, "key": "fines", "num": 1, "out": "AD"},
     {"page": 0, "key": "peak deviator stress, (kpa)", "num": 3, "out": "AS"},
     {"page": 0, "key": "normal stress, (kpa)", "num": 3, "out": "BB"},
     # CD rules
-    {"page": 2, "key": "effective soil angle of internal friction:", "if": "consolidated drained", "num": 1, "out": "AI"},
-    {"page": 2, "key": "effective soil cohesion:", "if": "consolidated drained", "num": 1, "out": "AJ"},
+    {"page": 2, "key": "effective soil angle of internal friction", "if": "consolidated drained", "num": 1, "out": "AI"},
+    {"page": 2, "key": "effective soil cohesion", "if": "consolidated drained", "num": 1, "out": "AJ"},
     # CU rules
-    {"page": 2, "key": "soil angle of internal friction:", "if": "consolidated undrained", "num": 1, "out": "AG"},
-    {"page": 2, "key": "soil cohesion:", "if": "consolidated undrained", "num": 1, "out": "AH"},
-    {"page": 3, "key": "effective soil angle of internal friction:", "if": "consolidated undrained", "num": 1, "out": "AI"},
-    {"page": 3, "key": "effective soil cohesion:", "if": "consolidated undrained", "num": 1, "out": "AJ"},
+    {"page": 2, "key": "soil angle of internal friction", "if": "consolidated undrained", "num": 1, "out": "AG"},
+    {"page": 2, "key": "soil cohesion", "if": "consolidated undrained", "num": 1, "out": "AH"},
+    {"page": 3, "key": "effective soil angle of internal friction", "if": "consolidated undrained", "num": 1, "out": "AI"},
+    {"page": 3, "key": "effective soil cohesion", "if": "consolidated undrained", "num": 1, "out": "AJ"},
 ]
 
 
@@ -97,7 +97,7 @@ def _copy_one_value(doc: fitz.Document, wb_out: xcl.ExcelWorkbook, last_row: int
     column = mapping["out"]
 
     page = doc[page_num]
-    page_boxes = page.get_text("words", sort=True)
+    page_boxes = page.get_text("words", delimiters=' :', sort=True)
     # As per https://pymupdf.readthedocs.io/en/latest/textpage.html#TextPage.extractWORDS
     page_words = [row[4] for row in page_boxes]
 

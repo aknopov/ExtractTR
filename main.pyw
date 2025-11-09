@@ -186,7 +186,7 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
             file_modified = pdf.extract_dir(self.source_dir, workbook) or file_modified
 
         if file_modified:
-            #TODO disabled: xcl.sort_rows(workbook)
+            xcl.sort_rows(workbook)
             xcl.save_workbook(workbook, self.destination_file)
 
         self.post_extract_ui()
@@ -212,12 +212,12 @@ class ExtractTRApp: # pylint: disable=too-many-instance-attributes
         self.extract_button.update()
 
     def configure_logging(self):
-        log_name = Path.home().joinpath("extractr.log").absolute()
-        rot_handler = RotatingFileHandler(log_name, maxBytes=5 * 1024 * 1024, backupCount=5)
+        log_path = Path.home().joinpath("extractr.log").absolute()
+        file_handler = RotatingFileHandler(log_path, maxBytes=5 * 1024 * 1024, backupCount=5, encoding='utf-8')
         log.basicConfig(
             level=log.DEBUG,
             format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[rot_handler],
+            handlers=[file_handler]
         )
 
 app = ExtractTRApp()

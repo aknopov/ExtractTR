@@ -14,9 +14,15 @@ EIEUR_SHEET = "Ei-Eur"
 RFKN_SHEET = "Rf-K-n"
 FLAC_SHEET = "FLAC1"
 OUTPUT_SHEET = "Summary by Type"
-SORT_COLUMN_IDX = cnv.col_name_to_idx("CG")
-LAST_COLUMN_IDX = SORT_COLUMN_IDX
+SORT_COLUMNS = [
+    cnv.col_name_to_idx("AN"),  # soil group
+    cnv.col_name_to_idx("B"),   # project
+    cnv.col_name_to_idx("D"),   # company
+    cnv.col_name_to_idx("G"),   # borehole
+]
+LAST_COLUMN_IDX = cnv.col_name_to_idx("CG")
 
+# fmt: off
 MAPPINGS = [
     # sheet name, src cell 1, [src cell 2,] dest col, row offset[, condition]
     {"sheet": INPUT_SHEET, "in1": "D6", "out": "B", "offset": 0},
@@ -80,11 +86,11 @@ MAPPINGS = [
     {"sheet": INPUT_SHEET, "in1": "D11", "out": "CG", "offset": 0},
 ]
 
-# fmt: off
 MERGE_COLS = [
     "B", "D", "F", "G", "H", "I", "J", "K", "AA", "AB", "AC", "AD", "AE", "AG", "AH", "AI", "AJ", "AN", "BS", "BT", "BU", "BV", "CG"
 ]
 # fmt: on
+
 
 class ExcelWorkbook:
     """
@@ -169,14 +175,13 @@ def save_workbook(wb: ExcelWorkbook, destination: str):
 
 # Based on https://stackoverflow.com/questions/44767554/sorting-with-openpyxl
 # Copying format: https://stackoverflow.com/questions/45433425/how-to-move-cell-range-in-openpyxl-with-its-properties-hyperlinks-formatting-e
-# TODO sort by goup, project and well, consider merged cells
 def sort_rows(wb: ExcelWorkbook):
     """Sorts range in the active sheet of workbook
 
     Args:
         wb  workbook wrapper
     """
-    log.info("Sorting rows %s - %s in the output spreadsheet by the column %s", wb.start_row, max_row(wb), SORT_COLUMN_IDX)
+    log.info("Sorting rows %s - %s in the output spreadsheet by the columns %s", wb.start_row, max_row(wb), SORT_COLUMNS)
 
     ws = wb.pyxl.active
 
@@ -185,32 +190,61 @@ def sort_rows(wb: ExcelWorkbook):
     start_row = wb.start_row
     end_row = ws.max_row
 
-    org_range = col_name_start + str(start_row) + ":" + col_name_end + str(end_row)
-    shift = end_row - start_row + 1
+    keys = []
+    prev_row = start_row
+    for row in range(start_row, end_row + 1):
+        val = ws.cell(row=row, column=SORT_COLUMNS[0]).value
+        if val != None and row != start_row:
+            # tuple has four sorting keys, original start and end rows
+            keys.append(
+                (
+                    ws.cell(prev_row, SORT_COLUMNS[0]).value,
+                    ws.cell(prev_row, SORT_COLUMNS[1]).value,
+                    ws.cell(prev_row, SORT_COLUMNS[2]).value,
+                    ws.cell(prev_row, SORT_COLUMNS[3]).value,
+                    prev_row,
+                    row - 1,
+                )
+            )
+            prev_row = row
+
+    keys.append(
+        (
+            ws.cell(prev_row, SORT_COLUMNS[0]).value,
+            ws.cell(prev_row, SORT_COLUMNS[1]).value,
+            ws.cell(prev_row, SORT_COLUMNS[2]).value,
+            ws.cell(prev_row, SORT_COLUMNS[3]).value,
+            prev_row,
+            end_row,
+        )
+    )
+
+    keys.sort(key=lambda x: (x[0], x[1], x[2], x[3]))
 
     # Move whole range to the bottom
+    org_range = col_name_start + str(start_row) + ":" + col_name_end + str(end_row)
+    shift = end_row - start_row + 1
     ws.move_range(org_range, rows=shift)
 
-    keys = []
-    for i in range(start_row + shift, end_row + shift + 1):
-        val = ws.cell(row=i, column=SORT_COLUMN_IDX).value or ""
-        keys.append((val, i))
-
-    # Sorts tuples by val and row (the tuple)!
-    keys.sort()
-
-    # Move rows from original place to destination in sorted order
+    # Move rows in chunks from original place to destination in sorted order
     to_row = wb.start_row
     for key in keys:
-        row_range = col_name_start + str(key[1]) + ":" + col_name_end + str(key[1])
-        ws.move_range(row_range, rows=to_row - key[1])
-        to_row += 1
+        range_start = key[4] + shift
+        range_end = key[5] + shift
+        row_range = (col_name_start + str(range_start) + ":" + col_name_end + str(range_end))
+        ws.move_range(row_range, rows=to_row - range_start)
+        to_row += range_end - range_start + 1
 
 
 def merge_cells(wb_out: ExcelWorkbook, col: str, last_row: int):
     """Merges three rows in Excel spreadsheet from row 'last_row" exclusively."""
     col_idx = cnv.col_name_to_idx(col)
-    wb_out.pyxl.active.merge_cells(start_row=last_row + 1, end_row=last_row + 3, start_column=col_idx, end_column=col_idx)
+    wb_out.pyxl.active.merge_cells(
+        start_row=last_row + 1,
+        end_row=last_row + 3,
+        start_column=col_idx,
+        end_column=col_idx,
+    )
 
 
 # Tries number of times
@@ -223,10 +257,11 @@ def _rename_orig(destination, max_tries):
     except FileExistsError:
         if max_tries == 0:
             return False
-        return _rename_orig(new_name, max_tries-1)
+        return _rename_orig(new_name, max_tries - 1)
     except PermissionError:
         resp = messagebox.askretrycancel(
-            message=f"File '{destination}' is opened in another application.\n" "Either close other and retry or cancel"
+            message=f"File '{destination}' is opened in another application.\n"
+            "Either close other and retry or cancel"
         )
         if resp == messagebox.CANCEL:
             return False
@@ -304,7 +339,11 @@ def _copy_one_value(wb_in: Workbook, wb_out: Workbook, last_row: int, mapping: A
 
     v_conv = cnv.convert_na(v)
 
-    if "if" not in mapping or v_conv == cnv.N_A or _get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]:
+    if (
+        "if" not in mapping
+        or v_conv == cnv.N_A
+        or _get_cell_value(wb_in, mapping["sheet"], mapping["if"]) == mapping["is"]
+    ):
 # fmt: off
         wb_out.active.cell(
             row = last_row + mapping["offset"] + 1,
